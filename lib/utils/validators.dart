@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import '../core/theme/app_colors.dart';
+
 class Validators {
   static String? validateName(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -50,5 +53,166 @@ class Validators {
       return 'Passwords do not match';
     }
     return null;
+  }
+
+  static String? validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your phone number';
+    }
+
+    String cleaned = value.replaceAll(RegExp(r'[^\d+]'), '');
+
+    if (cleaned.startsWith('+')) {
+      if (cleaned.length < 13 || cleaned.length > 15) {
+        return 'Enter a valid phone number';
+      }
+    } else {
+      if (cleaned.length < 10 || cleaned.length > 11) {
+        return 'Enter a valid phone number';
+      }
+    }
+
+    String numbersOnly = cleaned.replaceAll('+', '');
+    if (!RegExp(r'^\d+$').hasMatch(numbersOnly)) {
+      return 'Phone number should contain only numbers';
+    }
+
+    return null;
+  }
+
+  // ========== API ERROR MESSAGES ==========
+
+  // Get user-friendly error message from API response
+  static String getErrorMessage(String error) {
+    // Remove 'Exception:' prefix if present
+    String message = error.replaceAll('Exception:', '').trim().toLowerCase();
+
+    // Handle the specific email error from your API
+    if (message.contains('email has been used') ||
+        message.contains('email already') ||
+        message.contains('email already exists')) {
+      return 'This email is already registered. Please use a different email or login.';
+    }
+
+    // Handle phone errors
+    if (message.contains('phone has been used') ||
+        message.contains('phone already') ||
+        message.contains('phone number already')) {
+      return 'This phone number is already registered.';
+    }
+
+    // Handle validation errors
+    if (message.contains('validation')) {
+      if (message.contains('email')) {
+        return 'Please enter a valid email address.';
+      }
+      if (message.contains('phone')) {
+        return 'Please enter a valid phone number.';
+      }
+      if (message.contains('password')) {
+        return 'Password must meet the requirements.';
+      }
+      return 'Please check your input and try again.';
+    }
+
+    // Email related errors
+    if (message.contains('email') && message.contains('exist')) {
+      return 'This email is already registered. Please use a different email or login.';
+    }
+    if (message.contains('email') && message.contains('taken')) {
+      return 'Email address is already in use.';
+    }
+    if (message.contains('email') && message.contains('already')) {
+      return 'Email already exists. Try logging in instead.';
+    }
+
+    // Phone related errors
+    if (message.contains('phone') && message.contains('exist')) {
+      return 'This phone number is already registered.';
+    }
+    if (message.contains('phone') && message.contains('taken')) {
+      return 'Phone number is already in use.';
+    }
+    if (message.contains('phone') && message.contains('already')) {
+      return 'Phone number already exists.';
+    }
+
+    // Password related errors
+    if (message.contains('password') && message.contains('match')) {
+      return 'Passwords do not match. Please check and try again.';
+    }
+    if (message.contains('weak')) {
+      return 'Password is too weak. Please use a stronger password.';
+    }
+
+    // Network/Server errors
+    if (message.contains('network') || message.contains('connection')) {
+      return 'No internet connection. Please check your network and try again.';
+    }
+    if (message.contains('timeout')) {
+      return 'Request timeout. Please try again.';
+    }
+    if (message.contains('500')) {
+      return 'Server error. Please try again later.';
+    }
+    if (message.contains('404')) {
+      return 'Service unavailable. Please try again later.';
+    }
+
+    // Default error message
+    return message.isEmpty
+        ? 'Something went wrong. Please try again.'
+        : error.replaceAll('Exception:', '').trim();
+  }
+
+  // Show error snackbar with specific message
+  static void showErrorSnackBar(BuildContext context, String error) {
+    final errorMessage = getErrorMessage(error);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.text),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(errorMessage, style: const TextStyle(fontSize: 14)),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        action: SnackBarAction(
+          label: 'Dismiss',
+          textColor: AppColors.text,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
+  }
+
+  // Show success snackbar
+  static void showSuccessSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: AppColors.text),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(message, style: const TextStyle(fontSize: 14)),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.prof,
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 }

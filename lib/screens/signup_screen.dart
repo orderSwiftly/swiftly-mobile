@@ -3,8 +3,10 @@ import 'package:swiftly_mobile/core/theme/app_typography.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/password_field.dart';
 import '../widgets/custom_loader.dart';
+import '../widgets/phone_input_field.dart';
 import '../core/theme/app_colors.dart';
 import '../utils/validators.dart';
+import '../services/api_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -23,6 +25,10 @@ class _SignupScreenState extends State<SignupScreen> {
   final _confirmPasswordController = TextEditingController();
 
   bool _isLoading = false;
+  String _selectedCountryCode = '+234';
+
+  // Create instance of API service
+  final ApiService _apiService = ApiService();
 
   @override
   void dispose() {
@@ -35,21 +41,60 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  void _handleSignup() {
+  // Helper method to reset the entire form
+  void _resetForm() {
+    // Clear all text controllers
+    _firstNameController.clear();
+    _lastNameController.clear();
+    _emailController.clear();
+    _phoneController.clear();
+    _passwordController.clear();
+    _confirmPasswordController.clear();
+
+    // Reset form validation state (removes error messages)
+    _formKey.currentState?.reset();
+  }
+
+  // Handle signup with API call
+  Future<void> _handleSignup() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      Future.delayed(const Duration(seconds: 2), () {
+      try {
+        // Combine country code with phone number
+        final fullPhoneNumber =
+            '$_selectedCountryCode${_phoneController.text.trim().replaceFirst(RegExp(r'^0+'), '')}';
+
+        // Call the signup API
+        await _apiService.signup(
+          first_name: _firstNameController.text.trim(),
+          last_name: _lastNameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          confirm_password: _confirmPasswordController.text,
+          phone: fullPhoneNumber,
+        );
+
+        if (mounted) {
+          // Show success message using validator helper
+          Validators.showSuccessSnackBar(
+            context,
+            'Account created successfully! 🎉',
+          );
+
+          // Reset form to empty state
+          _resetForm();
+        }
+      } catch (e) {
+        // Show error message using validator helper
+        if (mounted) {
+          Validators.showErrorSnackBar(context, e.toString());
+        }
+      } finally {
         if (mounted) {
           setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Account created successfully!'),
-              backgroundColor: AppColors.prof,
-            ),
-          );
         }
-      });
+      }
     }
   }
 
@@ -68,6 +113,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // First Name & Last Name Row
                     Row(
                       children: [
                         Expanded(
@@ -91,27 +137,27 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 20),
 
+                    // Email Field
                     CustomTextField(
                       controller: _emailController,
                       label: 'Email Address',
                       hint: 'Enter your email address',
-                      // icon: Icons.email,
                       keyboardType: TextInputType.emailAddress,
                       validator: Validators.validateEmail,
                     ),
                     const SizedBox(height: 20),
 
-                    CustomTextField(
+                    // Phone Field with Country Code
+                    PhoneInputField(
                       controller: _phoneController,
-                      label: 'Phone Number',
-                      hint: 'Enter your phone number',
-                      // icon: Icons.phone,
-                      keyboardType: TextInputType.phone,
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Enter phone number' : null,
+                      onCountryCodeChanged: (code) {
+                        _selectedCountryCode = code;
+                      },
+                      validator: Validators.validatePhone,
                     ),
                     const SizedBox(height: 20),
 
+                    // Password Field
                     PasswordField(
                       controller: _passwordController,
                       label: 'Create Password',
@@ -120,6 +166,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 20),
 
+                    // Confirm Password Field
                     PasswordField(
                       controller: _confirmPasswordController,
                       label: 'Confirm Password',
@@ -153,7 +200,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 color: Colors.white,
                               )
                             : const Text(
-                                'Sign up  ›',
+                                'Sign up ›',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -163,6 +210,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 24),
 
+                    // Login Link
                     Center(
                       child: RichText(
                         text: TextSpan(
@@ -185,6 +233,8 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
+
+                    // Terms & Privacy
                     const Center(
                       child: Text(
                         'By signing up to Terms & Privacy Policy',
@@ -203,7 +253,10 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 }
 
+// Green Wave Header Widget
 class _GreenWaveHeader extends StatelessWidget {
+  const _GreenWaveHeader();
+
   @override
   Widget build(BuildContext context) {
     return ClipPath(
@@ -226,7 +279,10 @@ class _GreenWaveHeader extends StatelessWidget {
   }
 }
 
+// Wave Clipper for Custom Shape
 class _WaveClipper extends CustomClipper<Path> {
+  const _WaveClipper();
+
   @override
   Path getClip(Size size) {
     final path = Path();

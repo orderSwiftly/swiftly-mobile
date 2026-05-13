@@ -3,8 +3,12 @@ import 'package:swiftly_mobile/screens/splash_screen.dart';
 import 'package:swiftly_mobile/screens/onboarding_screen.dart';
 import 'package:swiftly_mobile/screens/signup_screen.dart';
 import 'core/theme/app_colors.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+void main() async {
+  // ← Add 'async' here
+  // Load .env file
+  await dotenv.load();
   runApp(const MyApp());
 }
 

@@ -3,96 +3,63 @@ import 'package:swiftly_mobile/core/theme/app_typography.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/password_field.dart';
 import '../widgets/custom_loader.dart';
-import '../widgets/phone_input_field.dart';
 import '../core/theme/app_colors.dart';
 import '../utils/validators.dart';
 import '../services/api_service.dart';
 
-class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
 
   bool _isLoading = false;
-  String _selectedCountryCode = '+234';
+  bool _rememberMe = false;
 
-  // Create instance of API service
   final ApiService _apiService = ApiService();
 
   @override
   void dispose() {
-    _firstNameController.dispose();
-    _lastNameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  // Helper method to reset the entire form
   void _resetForm() {
-    // Clear all text controllers
-    _firstNameController.clear();
-    _lastNameController.clear();
     _emailController.clear();
-    _phoneController.clear();
     _passwordController.clear();
-    _confirmPasswordController.clear();
-
-    // Reset form validation state (removes error messages)
     _formKey.currentState?.reset();
   }
 
-  // Handle signup with API call
-  Future<void> _handleSignup() async {
+  Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
       try {
-        // Combine country code with phone number
-        final fullPhoneNumber =
-            '$_selectedCountryCode${_phoneController.text.trim().replaceFirst(RegExp(r'^0+'), '')}';
-
-        // Call the signup API
-        await _apiService.signup(
-          first_name: _firstNameController.text.trim(),
-          last_name: _lastNameController.text.trim(),
+        final response = await _apiService.login(
           email: _emailController.text.trim(),
           password: _passwordController.text,
-          confirm_password: _confirmPasswordController.text,
-          phone: fullPhoneNumber,
         );
 
         if (mounted) {
           // Show success message
           Validators.showSuccessSnackBar(
             context,
-            'Account created successfully! 🎉',
+            'Login successful! Welcome back! 🎉',
           );
 
-          // Reset form to empty state
           _resetForm();
 
-          // Navigate to login screen after 1.5 seconds
-          await Future.delayed(const Duration(milliseconds: 1500));
-          if (mounted) {
-            Navigator.pushReplacementNamed(context, '/login');
-          }
+          // TODO: Navigate to home screen
+          // Navigator.pushReplacementNamed(context, '/home');
         }
       } catch (e) {
-        // Show error message using validator helper
         if (mounted) {
           Validators.showErrorSnackBar(context, e.toString());
         }
@@ -119,29 +86,22 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // First Name & Last Name Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: CustomTextField(
-                            controller: _firstNameController,
-                            label: 'First Name',
-                            hint: 'Enter your first name',
-                            validator: Validators.validateName,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: CustomTextField(
-                            controller: _lastNameController,
-                            label: 'Last Name',
-                            hint: 'Enter your last name',
-                            validator: Validators.validateName,
-                          ),
-                        ),
-                      ],
+                    // Welcome Text
+                    Text(
+                      'Welcome Back!',
+                      style: AppTypography.headline.copyWith(
+                        color: AppColors.primary,
+                        fontSize: 28,
+                      ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Login to your account',
+                      style: AppTypography.body.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
 
                     // Email Field
                     CustomTextField(
@@ -153,43 +113,65 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Phone Field with Country Code
-                    PhoneInputField(
-                      controller: _phoneController,
-                      onCountryCodeChanged: (code) {
-                        _selectedCountryCode = code;
-                      },
-                      validator: Validators.validatePhone,
-                    ),
-                    const SizedBox(height: 20),
-
                     // Password Field
                     PasswordField(
                       controller: _passwordController,
-                      label: 'Create Password',
-                      hint: 'at least 6 characters',
+                      label: 'Password',
+                      hint: 'Enter your password',
                       validator: Validators.validatePassword,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
 
-                    // Confirm Password Field
-                    PasswordField(
-                      controller: _confirmPasswordController,
-                      label: 'Confirm Password',
-                      hint: 'Re-enter your password',
-                      validator: (value) => Validators.validateConfirmPassword(
-                        value,
-                        _passwordController.text,
-                      ),
+                    // Forgot Password & Remember Me Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Remember Me
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _rememberMe,
+                              activeColor: AppColors.accent,
+                              onChanged: (v) =>
+                                  setState(() => _rememberMe = v ?? false),
+                            ),
+                            Text(
+                              'Remember Me',
+                              style: AppTypography.body.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Forgot Password
+                        TextButton(
+                          onPressed: () {
+                            // TODO: Navigate to forgot password screen
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Forgot Password? Coming soon!'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Forgot Password?',
+                            style: AppTypography.body.copyWith(
+                              color: AppColors.accent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 28),
 
-                    // Sign Up Button
+                    // Login Button
                     SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleSignup,
+                        onPressed: _isLoading ? null : _handleLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accent,
                           foregroundColor: Colors.white,
@@ -206,7 +188,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 color: Colors.white,
                               )
                             : const Text(
-                                'Sign up ›',
+                                'Login ›',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -216,11 +198,12 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Login Link
+                    // Sign Up Link - Updated with GestureDetector for navigation
                     Center(
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.pushReplacementNamed(context, '/login');
+                          // Navigate to signup screen
+                          Navigator.pushReplacementNamed(context, '/signup');
                         },
                         child: RichText(
                           text: TextSpan(
@@ -229,11 +212,9 @@ class _SignupScreenState extends State<SignupScreen> {
                               fontSize: 13,
                             ),
                             children: [
-                              const TextSpan(
-                                text: 'Already have an account?  ',
-                              ),
+                              const TextSpan(text: "Don't have an account? "),
                               TextSpan(
-                                text: 'Login here',
+                                text: 'Sign up',
                                 style: TextStyle(
                                   color: AppColors.accent,
                                   fontWeight: FontWeight.w600,
@@ -250,7 +231,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     // Terms & Privacy
                     const Center(
                       child: Text(
-                        'By signing up, you agree to our Terms & Privacy Policy',
+                        'By continuing, you agree to our Terms & Privacy Policy',
                         style: TextStyle(color: Colors.grey, fontSize: 11),
                       ),
                     ),
@@ -266,7 +247,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 }
 
-// Green Wave Header Widget
+// Green Wave Header Widget (Same as SignupScreen)
 class _GreenWaveHeader extends StatelessWidget {
   const _GreenWaveHeader();
 
@@ -280,7 +261,7 @@ class _GreenWaveHeader extends StatelessWidget {
         padding: const EdgeInsets.only(top: 48, left: 24, right: 24),
         alignment: Alignment.topLeft,
         child: const Text(
-          'Sign Up',
+          'Login',
           style: TextStyle(
             color: Colors.white,
             fontSize: 28,
@@ -292,7 +273,7 @@ class _GreenWaveHeader extends StatelessWidget {
   }
 }
 
-// Wave Clipper for Custom Shape
+// Wave Clipper for Custom Shape (Same as SignupScreen)
 class _WaveClipper extends CustomClipper<Path> {
   const _WaveClipper();
 

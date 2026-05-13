@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:swiftly_mobile/screens/splash_screen.dart';
-import 'package:swiftly_mobile/screens/onboarding_screen.dart';
-import 'package:swiftly_mobile/screens/signup_screen.dart';
-import 'core/theme/app_colors.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'screens/splash_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'screens/signup_screen.dart';
+import 'screens/login_screen.dart'; // Add this import
+import 'core/theme/app_colors.dart';
 
 void main() async {
-  // ← Add 'async' here
-  // Load .env file
+  WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();
   runApp(const MyApp());
 }
@@ -30,6 +30,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const SplashScreen(),
         '/onboarding': (context) => const OnboardingScreen(),
         '/signup': (context) => const SignupScreen(),
+        '/login': (context) => const LoginScreen(), // Add this route
       },
     );
   }

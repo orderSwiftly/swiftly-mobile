@@ -88,7 +88,10 @@ class _SignupScreenState extends State<SignupScreen> {
           // Navigate to login screen after 1.5 seconds
           await Future.delayed(const Duration(milliseconds: 1500));
           if (mounted) {
-            Navigator.pushReplacementNamed(context, '/login');
+            Navigator.pushReplacementNamed(context, '/verify-email', arguments: {
+              'email': _emailController.text.trim(),
+              'phone': fullPhoneNumber,
+            });
           }
         }
       } catch (e) {

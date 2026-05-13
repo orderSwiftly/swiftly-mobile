@@ -264,4 +264,143 @@ class ApiService {
       'token': 'fake_token_12345',
     };
   }
+
+  // VERIFY CUSTOMER EMAIL  
+  // Verify email with code - UPDATED ENDPOINT
+  Future<Map<String, dynamic>> verifyEmail({
+    required String email,
+    required String code,
+  }) async {
+    try {
+      final url = Uri.parse(
+        '$baseUrl/v2/customer/register/verify',
+      ); // Updated endpoint
+
+      final body = {'email': email, 'code': code};
+
+      print('Verifying email: $email with code: $code');
+      print('URL: $url');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+
+      print('Verify response status: ${response.statusCode}');
+      print('Verify response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          String errorMessage = 'Verification failed';
+
+          // Handle your API's error format
+          if (errorData['fields'] != null && errorData['fields'] is List) {
+            final fields = errorData['fields'] as List;
+            if (fields.isNotEmpty) {
+              final firstError = fields[0];
+              if (firstError['message'] != null) {
+                errorMessage = firstError['message'];
+              }
+            }
+          } else if (errorData['message'] != null) {
+            errorMessage = errorData['message'];
+          } else if (errorData['error'] != null) {
+            errorMessage = errorData['error'];
+          }
+
+          // Handle specific error cases
+          if (errorMessage.toLowerCase().contains('invalid') ||
+              errorMessage.toLowerCase().contains('wrong')) {
+            errorMessage = 'Invalid verification code. Please try again.';
+          } else if (errorMessage.toLowerCase().contains('expired')) {
+            errorMessage =
+                'Verification code has expired. Please request a new one.';
+          } else if (response.statusCode == 404) {
+            errorMessage =
+                'Verification service unavailable. Please try again.';
+          } else if (response.statusCode == 400) {
+            errorMessage = errorMessage.isEmpty
+                ? 'Invalid verification code'
+                : errorMessage;
+          }
+
+          throw Exception(errorMessage);
+        } catch (e) {
+          if (e is Exception) {
+            rethrow;
+          }
+          throw Exception('Verification failed: ${response.statusCode}');
+        }
+      }
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Resend verification code - Add this if you have an endpoint
+  Future<Map<String, dynamic>> resendVerificationCode({
+    required String email,
+  }) async {
+    try {
+      final url = Uri.parse(
+        '$baseUrl/v2/customer/register/resend-code',
+      ); // Adjust if needed
+
+      final body = {'email': email};
+
+      print('Resending verification code to: $email');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+
+      print('Resend response status: ${response.statusCode}');
+      print('Resend response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          String errorMessage = 'Failed to resend code';
+
+          if (errorData['fields'] != null && errorData['fields'] is List) {
+            final fields = errorData['fields'] as List;
+            if (fields.isNotEmpty) {
+              final firstError = fields[0];
+              if (firstError['message'] != null) {
+                errorMessage = firstError['message'];
+              }
+            }
+          } else if (errorData['message'] != null) {
+            errorMessage = errorData['message'];
+          }
+
+          throw Exception(errorMessage);
+        } catch (e) {
+          throw Exception('Failed to resend verification code');
+        }
+      }
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Network error: $e');
+    }
+  }
 }

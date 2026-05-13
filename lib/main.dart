@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:swiftly_mobile/screens/verify_email_screen.dart';
+import 'package:swiftly_mobile/screens/verify_otp_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/signup_screen.dart';
-import 'screens/login_screen.dart'; // Add this import
+import 'screens/login_screen.dart';
 import 'core/theme/app_colors.dart';
 
 void main() async {
@@ -34,6 +35,30 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/verify-email': (context) =>
             const VerifyEmailScreen(email: '', phone: ''),
+        '/verify-otp': (context) => const VerifyOtpScreen(email: ''),
+      },
+      onGenerateRoute: (settings) {
+        // Handle routes with arguments
+        if (settings.name == '/verify-otp') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (context) => VerifyOtpScreen(
+              email: args?['email'] ?? '',
+              phone: args?['phone'],
+              fromScreen: args?['fromScreen'] ?? 'signup',
+            ),
+          );
+        }
+        if (settings.name == '/verify-email') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (context) => VerifyEmailScreen(
+              email: args?['email'] ?? '',
+              phone: args?['phone'],
+            ),
+          );
+        }
+        return null;
       },
     );
   }

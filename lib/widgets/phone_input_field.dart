@@ -48,7 +48,7 @@ class PhoneInputField extends StatelessWidget {
           child: TextFormField(
             controller: controller,
             keyboardType: TextInputType.phone,
-            style: AppTypography.body.copyWith(color: AppColors.secondary),
+            style: AppTypography.body.copyWith(color: AppColors.darkBg),
             decoration: InputDecoration(
               labelText: 'Phone Number',
               hintText: '9011195859',

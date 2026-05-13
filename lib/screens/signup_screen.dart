@@ -7,6 +7,7 @@ import '../widgets/phone_input_field.dart';
 import '../core/theme/app_colors.dart';
 import '../utils/validators.dart';
 import '../services/api_service.dart';
+import 'verify_otp_screen.dart'; // Add this import
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -66,7 +67,7 @@ class _SignupScreenState extends State<SignupScreen> {
             '$_selectedCountryCode${_phoneController.text.trim().replaceFirst(RegExp(r'^0+'), '')}';
 
         // Call the signup API
-        await _apiService.signup(
+        final response = await _apiService.signup(
           first_name: _firstNameController.text.trim(),
           last_name: _lastNameController.text.trim(),
           email: _emailController.text.trim(),
@@ -79,19 +80,25 @@ class _SignupScreenState extends State<SignupScreen> {
           // Show success message
           Validators.showSuccessSnackBar(
             context,
-            'Account created successfully! 🎉',
+            'Account created! Please verify your OTP.',
           );
 
           // Reset form to empty state
           _resetForm();
 
-          // Navigate to login screen after 1.5 seconds
+          // Navigate to OTP verification screen after 1.5 seconds
           await Future.delayed(const Duration(milliseconds: 1500));
           if (mounted) {
-            Navigator.pushReplacementNamed(context, '/verify-email', arguments: {
-              'email': _emailController.text.trim(),
-              'phone': fullPhoneNumber,
-            });
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => VerifyOtpScreen(
+                  email: _emailController.text.trim(),
+                  phone: fullPhoneNumber,
+                  fromScreen: 'signup',
+                ),
+              ),
+            );
           }
         }
       } catch (e) {
@@ -113,7 +120,7 @@ class _SignupScreenState extends State<SignupScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          _GreenWaveHeader(),
+          const _GreenWaveHeader(),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
@@ -276,7 +283,7 @@ class _GreenWaveHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipPath(
-      clipper: _WaveClipper(),
+      clipper: const _WaveClipper(),
       child: Container(
         height: 160,
         color: AppColors.waveClr,
@@ -321,5 +328,5 @@ class _WaveClipper extends CustomClipper<Path> {
   }
 
   @override
-  bool shouldReclip(_WaveClipper oldClipper) => false;
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }

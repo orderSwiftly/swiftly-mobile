@@ -84,24 +84,20 @@ class Validators {
 
   // Get user-friendly error message from API response
   static String getErrorMessage(String error) {
-    // Remove 'Exception:' prefix if present
     String message = error.replaceAll('Exception:', '').trim().toLowerCase();
 
-    // Handle the specific email error from your API
     if (message.contains('email has been used') ||
         message.contains('email already') ||
         message.contains('email already exists')) {
       return 'This email is already registered. Please use a different email or login.';
     }
 
-    // Handle phone errors
     if (message.contains('phone has been used') ||
         message.contains('phone already') ||
         message.contains('phone number already')) {
       return 'This phone number is already registered.';
     }
 
-    // Handle validation errors
     if (message.contains('validation')) {
       if (message.contains('email')) {
         return 'Please enter a valid email address.';
@@ -115,7 +111,6 @@ class Validators {
       return 'Please check your input and try again.';
     }
 
-    // Email related errors
     if (message.contains('email') && message.contains('exist')) {
       return 'This email is already registered. Please use a different email or login.';
     }
@@ -126,7 +121,6 @@ class Validators {
       return 'Email already exists. Try logging in instead.';
     }
 
-    // Phone related errors
     if (message.contains('phone') && message.contains('exist')) {
       return 'This phone number is already registered.';
     }
@@ -137,7 +131,6 @@ class Validators {
       return 'Phone number already exists.';
     }
 
-    // Password related errors
     if (message.contains('password') && message.contains('match')) {
       return 'Passwords do not match. Please check and try again.';
     }
@@ -145,7 +138,6 @@ class Validators {
       return 'Password is too weak. Please use a stronger password.';
     }
 
-    // Network/Server errors
     if (message.contains('network') || message.contains('connection')) {
       return 'No internet connection. Please check your network and try again.';
     }
@@ -159,24 +151,30 @@ class Validators {
       return 'Service unavailable. Please try again later.';
     }
 
-    // Default error message
     return message.isEmpty
         ? 'Something went wrong. Please try again.'
         : error.replaceAll('Exception:', '').trim();
   }
 
-  // Show error snackbar with specific message
+  // Show error snackbar with specific message - FIXED VERSION
   static void showErrorSnackBar(BuildContext context, String error) {
     final errorMessage = getErrorMessage(error);
 
+    // Hide any existing snackbar first
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    // Show new snackbar
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.error_outline, color: AppColors.text),
+            const Icon(Icons.error_outline, color: Colors.white),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(errorMessage, style: const TextStyle(fontSize: 14)),
+              child: Text(
+                errorMessage,
+                style: const TextStyle(fontSize: 14, color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -185,8 +183,8 @@ class Validators {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         action: SnackBarAction(
-          label: 'Dismiss',
-          textColor: AppColors.text,
+          label: 'DISMISS',
+          textColor: Colors.white,
           onPressed: () {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
           },
@@ -197,14 +195,20 @@ class Validators {
 
   // Show success snackbar
   static void showSuccessSnackBar(BuildContext context, String message) {
+    // Hide any existing snackbar first
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle, color: AppColors.text),
+            const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(message, style: const TextStyle(fontSize: 14)),
+              child: Text(
+                message,
+                style: const TextStyle(fontSize: 14, color: Colors.white),
+              ),
             ),
           ],
         ),

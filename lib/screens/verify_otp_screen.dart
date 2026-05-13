@@ -6,33 +6,34 @@ import '../core/theme/app_colors.dart';
 import '../utils/validators.dart';
 import '../services/api_service.dart';
 
-class VerifyEmailScreen extends StatefulWidget {
+class VerifyOtpScreen extends StatefulWidget {
   final String email;
   final String? phone;
+  final String? fromScreen; // 'signup' or 'forgot-password'
 
-  const VerifyEmailScreen({super.key, required this.email, this.phone});
+  const VerifyOtpScreen({
+    super.key,
+    required this.email,
+    this.phone,
+    this.fromScreen = 'signup',
+  });
 
   @override
-  State<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
+  State<VerifyOtpScreen> createState() => _VerifyOtpScreenState();
 }
 
-class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
+class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   final TextEditingController _pinController = TextEditingController();
   bool _isLoading = false;
-
-  // 10 minutes countdown (600 seconds)
-  int _secondsRemaining = 600; // 10 minutes = 600 seconds
-  int _resendSecondsRemaining = 60; // Resend cooldown: 60 seconds
+  int _secondsRemaining = 60;
   bool _canResend = false;
-  bool _codeExpired = false;
 
   final ApiService _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
-    _startMainTimer();
-    _startResendTimer();
+    _startTimer();
   }
 
   @override
@@ -41,35 +42,16 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     super.dispose();
   }
 
-  // Main timer for code expiration (10 minutes)
-  void _startMainTimer() {
-    Future.delayed(const Duration(seconds: 1), _updateMainTimer);
+  void _startTimer() {
+    Future.delayed(const Duration(seconds: 1), _updateTimer);
   }
 
-  void _updateMainTimer() {
+  void _updateTimer() {
     if (_secondsRemaining > 0) {
       setState(() {
         _secondsRemaining--;
       });
-      Future.delayed(const Duration(seconds: 1), _updateMainTimer);
-    } else {
-      setState(() {
-        _codeExpired = true;
-      });
-    }
-  }
-
-  // Resend cooldown timer (60 seconds)
-  void _startResendTimer() {
-    Future.delayed(const Duration(seconds: 1), _updateResendTimer);
-  }
-
-  void _updateResendTimer() {
-    if (_resendSecondsRemaining > 0) {
-      setState(() {
-        _resendSecondsRemaining--;
-      });
-      Future.delayed(const Duration(seconds: 1), _updateResendTimer);
+      Future.delayed(const Duration(seconds: 1), _updateTimer);
     } else {
       setState(() {
         _canResend = true;
@@ -77,40 +59,26 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     }
   }
 
-  // Format time as MM:SS
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
-
   Future<void> _resendCode() async {
     setState(() {
       _isLoading = true;
       _canResend = false;
-      _resendSecondsRemaining = 60;
-      _codeExpired = false;
-      // Reset main timer when resending
-      _secondsRemaining = 600;
+      _secondsRemaining = 60;
     });
 
     try {
-      await _apiService.resendVerificationCode(email: widget.email);
+      await _apiService.resendOtp(email: widget.email);
 
       if (mounted) {
-        Validators.showSuccessSnackBar(
-          context,
-          'Verification code resent successfully!',
-        );
-        _startMainTimer();
-        _startResendTimer();
+        Validators.showSuccessSnackBar(context, 'OTP resent successfully!');
+        _startTimer();
       }
     } catch (e) {
       if (mounted) {
         Validators.showErrorSnackBar(context, e.toString());
         setState(() {
           _canResend = true;
-          _resendSecondsRemaining = 0;
+          _secondsRemaining = 0;
         });
       }
     } finally {
@@ -120,19 +88,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     }
   }
 
-  Future<void> _verifyCode() async {
-    if (_codeExpired) {
-      Validators.showErrorSnackBar(
-        context,
-        'Verification code has expired. Please request a new one.',
-      );
-      return;
-    }
-
+  Future<void> _verifyOtp() async {
     if (_pinController.text.length != 6) {
       Validators.showErrorSnackBar(
         context,
-        'Please enter the 6-digit verification code',
+        'Please enter the 6-digit OTP code',
       );
       return;
     }
@@ -140,7 +100,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _apiService.verifyEmail(
+      await _apiService.verifyOtp(
         email: widget.email,
         code: _pinController.text,
       );
@@ -148,17 +108,29 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       if (mounted) {
         Validators.showSuccessSnackBar(
           context,
-          'Email verified successfully! 🎉',
+          widget.fromScreen == 'signup'
+              ? 'Email verified successfully! 🎉'
+              : 'OTP verified successfully! 🎉',
         );
 
-        // Navigate to login screen
+        // Navigate based on source screen
         await Future.delayed(const Duration(milliseconds: 1500));
         if (mounted) {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/login',
-            (route) => false,
-          );
+          if (widget.fromScreen == 'signup') {
+            // From signup -> go to login
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/login',
+              (route) => false,
+            );
+          } else {
+            // From forgot password -> go to reset password
+            Navigator.pushReplacementNamed(
+              context,
+              '/reset-password',
+              arguments: {'email': widget.email},
+            );
+          }
         }
       }
     } catch (e) {
@@ -175,17 +147,17 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.text,
+      backgroundColor: Colors.white,
       body: Column(
         children: [
-          const _GreenWaveHeader(),
+          _GreenWaveHeader(),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Email Icon
+                  // OTP Icon
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -193,7 +165,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      Icons.email_outlined,
+                      Icons.security_outlined,
                       size: 60,
                       color: AppColors.accent,
                     ),
@@ -202,7 +174,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
                   // Title
                   Text(
-                    'Verify Your Email',
+                    'Verify OTP',
                     style: AppTypography.headline.copyWith(
                       color: AppColors.primary,
                       fontSize: 24,
@@ -212,7 +184,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
                   // Description
                   Text(
-                    'We have sent a verification code to',
+                    'We have sent a One-Time Password (OTP) to',
                     style: AppTypography.body.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -228,44 +200,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Enter the 6-digit code below',
+                    'Enter the 6-digit OTP code below',
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Code Expiration Timer
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _codeExpired
-                          ? Colors.red.withOpacity(0.1)
-                          : AppColors.accent.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _codeExpired ? Icons.timer_off : Icons.timer,
-                          size: 18,
-                          color: _codeExpired ? Colors.red : AppColors.accent,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _codeExpired
-                              ? 'Code Expired'
-                              : 'Code expires in: ${_formatTime(_secondsRemaining)}',
-                          style: AppTypography.body.copyWith(
-                            color: _codeExpired ? Colors.red : AppColors.accent,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -276,24 +213,21 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     length: 6,
                     obscureText: false,
                     animationType: AnimationType.fade,
-                    enabled: !_codeExpired,
                     pinTheme: PinTheme(
                       shape: PinCodeFieldShape.box,
                       borderRadius: BorderRadius.circular(12),
                       fieldHeight: 60,
                       fieldWidth: 50,
-                      activeFillColor: AppColors.text,
-                      inactiveFillColor: AppColors.text,
-                      selectedFillColor: AppColors.text,
+                      activeFillColor: Colors.white,
+                      inactiveFillColor: Colors.white,
+                      selectedFillColor: Colors.white,
                       activeColor: AppColors.accent,
                       inactiveColor: AppColors.secondary.withOpacity(0.5),
                       selectedColor: AppColors.accent,
                     ),
                     keyboardType: TextInputType.number,
                     onCompleted: (value) {
-                      if (!_codeExpired) {
-                        _verifyCode();
-                      }
+                      _verifyOtp();
                     },
                     appContext: context,
                   ),
@@ -304,14 +238,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: (_isLoading || _codeExpired)
-                          ? null
-                          : _verifyCode,
+                      onPressed: _isLoading ? null : _verifyOtp,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _codeExpired
-                            ? Colors.grey
-                            : AppColors.accent,
-                        foregroundColor: AppColors.text,
+                        backgroundColor: AppColors.accent,
+                        foregroundColor: Colors.white,
                         elevation: 0,
                         shape: const StadiumBorder(),
                         disabledBackgroundColor: AppColors.accent.withOpacity(
@@ -322,11 +252,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           ? const CustomLoader(
                               size: 24,
                               strokeWidth: 2.5,
-                              color: AppColors.prof,
+                              color: Colors.white,
                             )
-                          : Text(
-                              _codeExpired ? 'Code Expired' : 'Verify Email ›',
-                              style: const TextStyle(
+                          : const Text(
+                              'Verify OTP ›',
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -345,7 +275,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      if (_canResend && !_codeExpired)
+                      if (_canResend)
                         GestureDetector(
                           onTap: _isLoading ? null : _resendCode,
                           child: Text(
@@ -356,22 +286,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                             ),
                           ),
                         )
-                      else if (!_codeExpired)
+                      else
                         Text(
-                          'Resend in ${_resendSecondsRemaining}s',
+                          'Resend in ${_secondsRemaining}s',
                           style: AppTypography.body.copyWith(
                             color: AppColors.textSecondary,
-                          ),
-                        ),
-                      if (_codeExpired)
-                        GestureDetector(
-                          onTap: _isLoading ? null : _resendCode,
-                          child: Text(
-                            'Request New Code',
-                            style: AppTypography.body.copyWith(
-                              color: AppColors.accent,
-                              fontWeight: FontWeight.bold,
-                            ),
                           ),
                         ),
                     ],
@@ -422,16 +341,16 @@ class _GreenWaveHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipPath(
-      clipper: const _WaveClipper(),
+      clipper: _WaveClipper(),
       child: Container(
         height: 160,
         color: AppColors.waveClr,
         padding: const EdgeInsets.only(top: 48, left: 24, right: 24),
         alignment: Alignment.topLeft,
         child: const Text(
-          'Verify Email',
+          'Verify OTP',
           style: TextStyle(
-            color: AppColors.text,
+            color: Colors.white,
             fontSize: 28,
             fontWeight: FontWeight.bold,
           ),
@@ -467,5 +386,5 @@ class _WaveClipper extends CustomClipper<Path> {
   }
 
   @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+  bool shouldReclip(_WaveClipper oldClipper) => false;
 }

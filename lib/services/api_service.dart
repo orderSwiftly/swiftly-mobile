@@ -353,7 +353,7 @@ class ApiService {
   }) async {
     try {
       final url = Uri.parse(
-        '$baseUrl/v2/customer/register/resend-code',
+        '$baseUrl/v2/customer/register/resend',
       ); // Adjust if needed
 
       final body = {'email': email};
@@ -394,6 +394,129 @@ class ApiService {
           throw Exception(errorMessage);
         } catch (e) {
           throw Exception('Failed to resend verification code');
+        }
+      }
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Verify OTP
+  Future<Map<String, dynamic>> verifyOtp({
+    required String email,
+    required String code,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/v2/auth/verify-otp');
+
+      final body = {'email': email, 'code': code};
+
+      print('Verifying OTP for email: $email with code: $code');
+      print('URL: $url');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+
+      print('Verify OTP response status: ${response.statusCode}');
+      print('Verify OTP response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          String errorMessage = 'OTP verification failed';
+
+          if (errorData['fields'] != null && errorData['fields'] is List) {
+            final fields = errorData['fields'] as List;
+            if (fields.isNotEmpty) {
+              final firstError = fields[0];
+              if (firstError['message'] != null) {
+                errorMessage = firstError['message'];
+              }
+            }
+          } else if (errorData['message'] != null) {
+            errorMessage = errorData['message'];
+          } else if (errorData['error'] != null) {
+            errorMessage = errorData['error'];
+          }
+
+          // Handle specific error cases
+          if (errorMessage.toLowerCase().contains('invalid') ||
+              errorMessage.toLowerCase().contains('wrong')) {
+            errorMessage = 'Invalid OTP code. Please try again.';
+          } else if (errorMessage.toLowerCase().contains('expired')) {
+            errorMessage = 'OTP has expired. Please request a new one.';
+          }
+
+          throw Exception(errorMessage);
+        } catch (e) {
+          if (e is Exception) {
+            rethrow;
+          }
+          throw Exception('OTP verification failed: ${response.statusCode}');
+        }
+      }
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Resend OTP
+  Future<Map<String, dynamic>> resendOtp({required String email}) async {
+    try {
+      final url = Uri.parse('$baseUrl/v2/auth/resend-otp');
+
+      final body = {'email': email};
+
+      print('Resending OTP to: $email');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+
+      print('Resend OTP response status: ${response.statusCode}');
+      print('Resend OTP response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          String errorMessage = 'Failed to resend OTP';
+
+          if (errorData['fields'] != null && errorData['fields'] is List) {
+            final fields = errorData['fields'] as List;
+            if (fields.isNotEmpty) {
+              final firstError = fields[0];
+              if (firstError['message'] != null) {
+                errorMessage = firstError['message'];
+              }
+            }
+          } else if (errorData['message'] != null) {
+            errorMessage = errorData['message'];
+          }
+
+          throw Exception(errorMessage);
+        } catch (e) {
+          throw Exception('Failed to resend OTP');
         }
       }
     } catch (e) {

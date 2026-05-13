@@ -162,7 +162,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ? 'Get Started'
                             : 'Next',
                         style: const TextStyle(
-                          color: AppColors.text,
+                          color: AppColors.prof,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),

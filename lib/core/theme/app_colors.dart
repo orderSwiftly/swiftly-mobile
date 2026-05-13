@@ -9,4 +9,9 @@ class AppColors {
   static const Color prof = Color(0xFF669917);
   static const Color darkBg = Color(0xFF0A0F1A);
   static const Color waveClr = Color(0xFF4D770D);
+
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFF666666);
+  static const Color textHint = Color(0xFF999999);
+  static const Color textError = Color(0xFFE53935);
 }

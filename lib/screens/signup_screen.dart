@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:swiftly_mobile/core/theme/app_typography.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/password_field.dart';
 import '../widgets/custom_loader.dart';
@@ -176,6 +177,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               style: TextStyle(
                                 color: AppColors.accent,
                                 fontWeight: FontWeight.w600,
+                                fontFamily: AppTypography.fontFamily,
                               ),
                             ),
                           ],

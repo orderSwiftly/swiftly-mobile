@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'screens/signup_screen.dart';
+import 'package:swiftly_mobile/screens/splash_screen.dart';
+import 'package:swiftly_mobile/screens/onboarding_screen.dart';
+import 'package:swiftly_mobile/screens/signup_screen.dart';
 import 'core/theme/app_colors.dart';
 
 void main() {
@@ -12,14 +14,19 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Signup App',
+      title: 'Swiftly Mobile',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor:
-            AppColors.text, // Using AppColors.text as background
+        scaffoldBackgroundColor: AppColors.text,
+        fontFamily: 'Manrope',
       ),
-      home: const SignupScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SplashScreen(),
+        '/onboarding': (context) => const OnboardingScreen(),
+        '/signup': (context) => const SignupScreen(),
+      },
     );
   }
 }

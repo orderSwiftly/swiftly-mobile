@@ -3,7 +3,7 @@ import 'screens/signup_screen.dart';
 import 'core/theme/app_colors.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {

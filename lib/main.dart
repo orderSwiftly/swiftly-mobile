@@ -1,11 +1,14 @@
+// main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:swiftly_mobile/screens/verify_email_screen.dart';
 import 'package:swiftly_mobile/screens/verify_otp_screen.dart';
+import 'screens/forgot_password_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/dashboard_screen.dart'; // add
 import 'core/theme/app_colors.dart';
 
 void main() async {
@@ -33,12 +36,13 @@ class MyApp extends StatelessWidget {
         '/onboarding': (context) => const OnboardingScreen(),
         '/signup': (context) => const SignupScreen(),
         '/login': (context) => const LoginScreen(),
+        '/home': (context) => const DashboardScreen(), // add
         '/verify-email': (context) =>
             const VerifyEmailScreen(email: '', phone: ''),
         '/verify-otp': (context) => const VerifyOtpScreen(email: ''),
+        '/forgot-password': (context) => const ForgotPasswordScreen(),
       },
       onGenerateRoute: (settings) {
-        // Handle routes with arguments
         if (settings.name == '/verify-otp') {
           final args = settings.arguments as Map<String, dynamic>?;
           return MaterialPageRoute(

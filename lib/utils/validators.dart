@@ -168,12 +168,12 @@ class Validators {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.white),
+            const Icon(Icons.error_outline, color: AppColors.text),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 errorMessage,
-                style: const TextStyle(fontSize: 14, color: Colors.white),
+                style: const TextStyle(fontSize: 14, color: AppColors.text),
               ),
             ),
           ],
@@ -184,7 +184,7 @@ class Validators {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         action: SnackBarAction(
           label: 'DISMISS',
-          textColor: Colors.white,
+          textColor: AppColors.text,
           onPressed: () {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
           },
@@ -202,12 +202,12 @@ class Validators {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle, color: Colors.white),
+            const Icon(Icons.check_circle, color: AppColors.text),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(fontSize: 14, color: Colors.white),
+                style: const TextStyle(fontSize: 14, color: AppColors.text),
               ),
             ),
           ],

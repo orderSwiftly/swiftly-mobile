@@ -1,65 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:swiftly_mobile/core/theme/app_typography.dart';
 import '../widgets/custom_text_field.dart';
-import '../widgets/password_field.dart';
 import '../widgets/custom_loader.dart';
 import '../core/theme/app_colors.dart';
 import '../utils/validators.dart';
 import '../services/api_service.dart';
-import 'forgot_password_screen.dart'; // Add this import
+import 'verify_otp_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class ForgotPasswordScreen extends StatefulWidget {
+  const ForgotPasswordScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
 
   bool _isLoading = false;
-  bool _rememberMe = false;
 
   final ApiService _apiService = ApiService();
 
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
-  void _resetForm() {
-    _emailController.clear();
-    _passwordController.clear();
-    _formKey.currentState?.reset();
-  }
-
-  Future<void> _handleLogin() async {
+  Future<void> _handleForgotPassword() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
       try {
-        final response = await _apiService.login(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        );
+        // Call API to send reset password OTP
+        await _apiService.forgotPassword(email: _emailController.text.trim());
 
         if (mounted) {
           Validators.showSuccessSnackBar(
             context,
-            'Login successful! Welcome back!',
+            'Reset code sent to your email!',
           );
 
-          _resetForm();
-
-          // Navigate to role-based home screen
+          // Navigate to OTP verification screen
           await Future.delayed(const Duration(milliseconds: 1500));
           if (mounted) {
-            Navigator.pushReplacementNamed(context, '/home');
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => VerifyOtpScreen(
+                  email: _emailController.text.trim(),
+                  fromScreen: 'forgot-password',
+                ),
+              ),
+            );
           }
         }
       } catch (e) {
@@ -87,22 +81,40 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Form(
                 key: _formKey,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Welcome Text
-                    Text(
-                      'Welcome Back!',
-                      style: AppTypography.headline.copyWith(
-                        color: AppColors.primary,
-                        fontSize: 28,
+                    // Icon
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.lock_reset_outlined,
+                        size: 60,
+                        color: AppColors.accent,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 24),
+
+                    // Title
                     Text(
-                      'Login to your account',
+                      'Forgot Password?',
+                      style: AppTypography.headline.copyWith(
+                        color: AppColors.primary,
+                        fontSize: 24,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Description
+                    Text(
+                      'Enter your email address and we\'ll send you a code to reset your password.',
                       style: AppTypography.body.copyWith(
                         color: AppColors.textSecondary,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
 
@@ -114,67 +126,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.emailAddress,
                       validator: Validators.validateEmail,
                     ),
-                    const SizedBox(height: 20),
-
-                    // Password Field
-                    PasswordField(
-                      controller: _passwordController,
-                      label: 'Password',
-                      hint: 'Enter your password',
-                      validator: Validators.validatePassword,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Forgot Password & Remember Me Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Remember Me
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _rememberMe,
-                              activeColor: AppColors.accent,
-                              onChanged: (v) =>
-                                  setState(() => _rememberMe = v ?? false),
-                            ),
-                            Text(
-                              'Remember Me',
-                              style: AppTypography.body.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        // Forgot Password - UPDATED LINK
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const ForgotPasswordScreen(),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'Forgot Password?',
-                            style: AppTypography.body.copyWith(
-                              color: AppColors.accent,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
                     const SizedBox(height: 28),
 
-                    // Login Button
+                    // Send Reset Code Button
                     SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleLogin,
+                        onPressed: _isLoading ? null : _handleForgotPassword,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accent,
                           foregroundColor: Colors.white,
@@ -191,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: Colors.white,
                               )
                             : const Text(
-                                'Login ›',
+                                'Send Reset Code ›',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -201,11 +160,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Sign Up Link
+                    // Back to Login Link
                     Center(
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.pushReplacementNamed(context, '/signup');
+                          Navigator.pushReplacementNamed(context, '/login');
                         },
                         child: RichText(
                           text: TextSpan(
@@ -214,9 +173,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontSize: 13,
                             ),
                             children: [
-                              const TextSpan(text: "Don't have an account? "),
+                              const TextSpan(text: 'Remember your password? '),
                               TextSpan(
-                                text: 'Sign up',
+                                text: 'Back to Login',
                                 style: TextStyle(
                                   color: AppColors.accent,
                                   fontWeight: FontWeight.w600,
@@ -228,16 +187,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-
-                    // Terms & Privacy
-                    const Center(
-                      child: Text(
-                        'By continuing, you agree to our Terms & Privacy Policy',
-                        style: TextStyle(color: Colors.grey, fontSize: 11),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
                   ],
                 ),
               ),
@@ -256,14 +205,14 @@ class _GreenWaveHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipPath(
-      clipper: const _WaveClipper(),
+      clipper: _WaveClipper(),
       child: Container(
         height: 160,
         color: AppColors.waveClr,
         padding: const EdgeInsets.only(top: 48, left: 24, right: 24),
         alignment: Alignment.topLeft,
         child: const Text(
-          'Login',
+          'Forgot Password',
           style: TextStyle(
             color: Colors.white,
             fontSize: 28,

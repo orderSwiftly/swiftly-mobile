@@ -11,10 +11,8 @@ import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart'; // add
 import 'core/theme/app_colors.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load();
-  runApp(const MyApp());
+void main() {
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {

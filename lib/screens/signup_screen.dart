@@ -120,152 +120,153 @@ class _SignupScreenState extends State<SignupScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          const _GreenWaveHeader(),
+          // Wave header stays full width always
+          _GreenWaveHeader(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // First Name & Last Name Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: CustomTextField(
-                            controller: _firstNameController,
-                            label: 'First Name',
-                            hint: 'Enter your first name',
-                            validator: Validators.validateName,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: CustomTextField(
-                            controller: _lastNameController,
-                            label: 'Last Name',
-                            hint: 'Enter your last name',
-                            validator: Validators.validateName,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Email Field
-                    CustomTextField(
-                      controller: _emailController,
-                      label: 'Email Address',
-                      hint: 'Enter your email address',
-                      keyboardType: TextInputType.emailAddress,
-                      validator: Validators.validateEmail,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Phone Field with Country Code
-                    PhoneInputField(
-                      controller: _phoneController,
-                      onCountryCodeChanged: (code) {
-                        _selectedCountryCode = code;
-                      },
-                      validator: Validators.validatePhone,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Password Field
-                    PasswordField(
-                      controller: _passwordController,
-                      label: 'Create Password',
-                      hint: 'at least 6 characters',
-                      validator: Validators.validatePassword,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Confirm Password Field
-                    PasswordField(
-                      controller: _confirmPasswordController,
-                      label: 'Confirm Password',
-                      hint: 'Re-enter your password',
-                      validator: (value) => Validators.validateConfirmPassword(
-                        value,
-                        _passwordController.text,
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-
-                    // Sign Up Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleSignup,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: const StadiumBorder(),
-                          disabledBackgroundColor: AppColors.accent.withOpacity(
-                            0.7,
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const CustomLoader(
-                                size: 24,
-                                strokeWidth: 2.5,
-                                color: Colors.white,
-                              )
-                            : const Text(
-                                'Sign up ›',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+              padding: const EdgeInsets.symmetric(vertical: 28),
+              child: Center(
+                child: ConstrainedBox(
+                  // On desktop, form maxes out at 520px and stays centered
+                  // On mobile, it fills the screen normally
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _firstNameController,
+                                  label: 'First Name',
+                                  hint: 'Enter your first name',
+                                  validator: Validators.validateName,
                                 ),
                               ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Login Link
-                    Center(
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.pushReplacementNamed(context, '/login');
-                        },
-                        child: RichText(
-                          text: TextSpan(
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 13,
-                            ),
-                            children: [
-                              const TextSpan(
-                                text: 'Already have an account?  ',
-                              ),
-                              TextSpan(
-                                text: 'Login here',
-                                style: TextStyle(
-                                  color: AppColors.accent,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: AppTypography.fontFamily,
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _lastNameController,
+                                  label: 'Last Name',
+                                  hint: 'Enter your last name',
+                                  validator: Validators.validateName,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
+                          const SizedBox(height: 20),
 
-                    // Terms & Privacy
-                    const Center(
-                      child: Text(
-                        'By signing up, you agree to our Terms & Privacy Policy',
-                        style: TextStyle(color: Colors.grey, fontSize: 11),
+                          CustomTextField(
+                            controller: _emailController,
+                            label: 'Email Address',
+                            hint: 'Enter your email address',
+                            keyboardType: TextInputType.emailAddress,
+                            validator: Validators.validateEmail,
+                          ),
+                          const SizedBox(height: 20),
+
+                          CustomTextField(
+                            controller: _phoneController,
+                            label: 'Phone Number',
+                            hint: 'Enter your phone number',
+                            keyboardType: TextInputType.phone,
+                            validator: (v) => v == null || v.isEmpty
+                                ? 'Enter phone number'
+                                : null,
+                          ),
+                          const SizedBox(height: 20),
+
+                          PasswordField(
+                            controller: _passwordController,
+                            label: 'Create Password',
+                            hint: 'at least 6 characters',
+                            validator: Validators.validatePassword,
+                          ),
+                          const SizedBox(height: 20),
+
+                          PasswordField(
+                            controller: _confirmPasswordController,
+                            label: 'Confirm Password',
+                            hint: 'Re-enter your password',
+                            validator: (value) =>
+                                Validators.validateConfirmPassword(
+                                  value,
+                                  _passwordController.text,
+                                ),
+                          ),
+                          const SizedBox(height: 28),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _handleSignup,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.accent,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: const StadiumBorder(),
+                                disabledBackgroundColor: AppColors.accent
+                                    .withOpacity(0.7),
+                              ),
+                              child: _isLoading
+                                  ? const CustomLoader(
+                                      size: 24,
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
+                                    )
+                                  : const Text(
+                                      'Sign up  ›',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          Center(
+                            child: RichText(
+                              text: TextSpan(
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
+                                children: [
+                                  const TextSpan(
+                                    text: 'Already have an account?  ',
+                                  ),
+                                  TextSpan(
+                                    text: 'Login here',
+                                    style: TextStyle(
+                                      color: AppColors.accent,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Center(
+                            child: Text(
+                              'By signing up to Terms & Privacy Policy',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -328,5 +329,5 @@ class _WaveClipper extends CustomClipper<Path> {
   }
 
   @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+  bool shouldReclip(_WaveClipper oldClipper) => false;
 }

@@ -1,6 +1,7 @@
 // main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:swiftly_mobile/screens/reset_password_screen.dart';
 import 'package:swiftly_mobile/screens/verify_email_screen.dart';
 import 'package:swiftly_mobile/screens/verify_otp_screen.dart';
 import 'screens/forgot_password_screen.dart';
@@ -60,6 +61,14 @@ class MyApp extends StatelessWidget {
               email: args?['email'] ?? '',
               phone: args?['phone'],
             ),
+          );
+        }
+        // In onGenerateRoute, add:
+        if (settings.name == '/reset-password') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (context) =>
+                ResetPasswordScreen(resetToken: args?['reset_token'] ?? ''),
           );
         }
         return null;

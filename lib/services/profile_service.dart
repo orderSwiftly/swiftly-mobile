@@ -25,9 +25,9 @@ class ProfileService {
     }
   }
 
-  Future<Map<String, dynamic>?> fetchUserProfile() async {
+Future<Map<String, dynamic>?> fetchUserProfile() async {
     try {
-      // Retry up to 10 times with 500ms delay — handles race on first load
+      // Retry up to 10 times with 500ms delay
       String? token;
       for (int i = 0; i < 10; i++) {
         token = await _storage.read(key: 'auth_token');
@@ -39,10 +39,6 @@ class ProfileService {
         print('No auth token found after retries');
         return null;
       }
-
-      print(
-        'Token found: ${token.substring(0, token.length > 20 ? 20 : token.length)}...',
-      );
 
       final role = await _storage.read(key: 'user_role') ?? 'CUSTOMER';
       final endpoint = _profileEndpoint(role);
@@ -62,8 +58,14 @@ class ProfileService {
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
+      } else if (response.statusCode == 403) {
+        // Email not verified - this is expected for new users
+        final errorData = jsonDecode(response.body);
+        print('Email not verified: ${errorData['message']}');
+
+        // Return a special response indicating email not verified
+        return {'error': 'EMAIL_NOT_VERIFIED', 'message': errorData['message']};
       } else if (response.statusCode == 401) {
-        // Token might be expired, clear it
         print('Token expired, clearing storage');
         await _storage.delete(key: 'auth_token');
         return null;
@@ -75,4 +77,5 @@ class ProfileService {
       return null;
     }
   }
+
 }

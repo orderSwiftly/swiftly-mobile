@@ -60,7 +60,7 @@ class ApiService {
     await _storage.delete(key: 'user_data');
   }
 
-  // Signup function with snake_case parameters
+// Signup function with snake_case parameters
   Future<Map<String, dynamic>> signup({
     required String first_name,
     required String last_name,
@@ -84,7 +84,11 @@ class ApiService {
         'phone': formattedPhone,
       };
 
-      // print('Sending to API: $body');
+      // UNCOMMENT THESE FOR DEBUGGING
+      print('========== SIGNUP REQUEST ==========');
+      print('URL: $url');
+      print('BODY: $body');
+      print('====================================');
 
       final response = await http.post(
         url,
@@ -95,8 +99,10 @@ class ApiService {
         body: jsonEncode(body),
       );
 
-      // print('Response status: ${response.statusCode}');
-      // print('Response body: ${response.body}');
+      print('========== SIGNUP RESPONSE ==========');
+      print('Status: ${response.statusCode}');
+      print('Body: ${response.body}');
+      print('=====================================');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
@@ -104,13 +110,12 @@ class ApiService {
         // Try to get error message from response body
         try {
           final errorData = jsonDecode(response.body);
-
-          // Check for different error formats
           String errorMessage = 'Signup failed';
 
-          // Handle your API's specific response format
+          // Log the error response for debugging
+          print('Error response: $errorData');
+
           if (errorData['fields'] != null && errorData['fields'] is List) {
-            // Get the first field error message
             final fields = errorData['fields'] as List;
             if (fields.isNotEmpty) {
               final firstError = fields[0];
@@ -124,24 +129,11 @@ class ApiService {
             errorMessage = errorData['error'];
           }
 
-          // Also check for specific field errors in other formats
-          if (errorMessage == 'Signup failed' && errorData['errors'] != null) {
-            final errors = errorData['errors'];
-            if (errors is Map) {
-              // Get first error message from map
-              final firstError = errors.values.first;
-              if (firstError is List && firstError.isNotEmpty) {
-                errorMessage = firstError.first;
-              } else if (firstError is String) {
-                errorMessage = firstError;
-              }
-            }
-          }
-
           throw Exception(errorMessage);
         } catch (e) {
-          // If can't parse JSON, throw status code error
-          throw Exception('Server error: ${response.statusCode}');
+          throw Exception(
+            'Server error: ${response.statusCode} - ${response.body}',
+          );
         }
       }
     } catch (e) {
@@ -151,8 +143,8 @@ class ApiService {
       throw Exception('Network error: $e');
     }
   }
-
-  // Login function - UPDATED to get token from headers
+  
+    // Login function - UPDATED to get token from headers
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -284,8 +276,13 @@ class ApiService {
 
       final body = {'email': email, 'code': code};
 
-      // print('Verifying email: $email with code: $code');
-      // print('URL: $url');
+      // UNCOMMENT THESE FOR DEBUGGING
+      print('========== VERIFY EMAIL ==========');
+      print('URL: $url');
+      print('Email: $email');
+      print('Code: $code');
+      print('Body: $body');
+      print('==================================');
 
       final response = await http.post(
         url,
@@ -296,12 +293,17 @@ class ApiService {
         body: jsonEncode(body),
       );
 
-      // print('Verify response status: ${response.statusCode}');
-      // print('Verify response body: ${response.body}');
+      print('========== VERIFY EMAIL RESPONSE ==========');
+      print('Status: ${response.statusCode}');
+      print('Body: ${response.body}');
+      print('==========================================');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return jsonDecode(response.body);
+        final responseData = jsonDecode(response.body);
+        print('✅ Verification successful: $responseData');
+        return responseData;
       } else {
+        print('❌ Verification failed with status: ${response.statusCode}');
         try {
           final errorData = jsonDecode(response.body);
           String errorMessage = 'Verification failed';
@@ -319,6 +321,8 @@ class ApiService {
           } else if (errorData['error'] != null) {
             errorMessage = errorData['error'];
           }
+
+          print('Error message from API: $errorMessage');
 
           if (errorMessage.toLowerCase().contains('invalid') ||
               errorMessage.toLowerCase().contains('wrong')) {
@@ -344,6 +348,7 @@ class ApiService {
         }
       }
     } catch (e) {
+      print('❌ Network error: $e');
       if (e is Exception) {
         rethrow;
       }
@@ -585,18 +590,17 @@ class ApiService {
     }
   }
 
-  // Reset Password with new password
+// Reset Password with new password
   Future<Map<String, dynamic>> resetPassword({
-    required String email,
-    required String code,
+    required String resetToken,
     required String newPassword,
   }) async {
     try {
       final url = Uri.parse('$baseUrl/v2/auth/reset-password');
 
-      final body = {'email': email, 'code': code, 'new_password': newPassword};
+      final body = {'reset_token': resetToken, 'new_password': newPassword};
 
-      print('Resetting password for: $email');
+      print('Resetting password');
       print('Request body: $body');
 
       final response = await http.post(
@@ -635,9 +639,9 @@ class ApiService {
           // Handle specific error cases
           if (errorMessage.toLowerCase().contains('invalid') ||
               errorMessage.toLowerCase().contains('wrong')) {
-            errorMessage = 'Invalid reset code. Please try again.';
+            errorMessage = 'Invalid reset token. Please try again.';
           } else if (errorMessage.toLowerCase().contains('expired')) {
-            errorMessage = 'Reset code has expired. Please request a new one.';
+            errorMessage = 'Reset token has expired. Please request a new one.';
           }
 
           throw Exception(errorMessage);

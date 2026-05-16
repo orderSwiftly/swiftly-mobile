@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:swiftly_mobile/core/theme/app_typography.dart';
+import 'package:swiftly_mobile/screens/reset_password_screen.dart';
 import '../widgets/custom_loader.dart';
 import '../core/theme/app_colors.dart';
 import '../utils/validators.dart';
@@ -100,34 +101,27 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _apiService.verifyOtp(
+      final response = await _apiService.verifyOtp(
         email: widget.email,
         code: _pinController.text,
       );
 
       if (mounted) {
-        Validators.showSuccessSnackBar(
-          context,
-          widget.fromScreen == 'signup'
-              ? 'Email verified successfully! 🎉'
-              : 'OTP verified successfully! 🎉',
-        );
+        Validators.showSuccessSnackBar(context, 'OTP verified successfully!');
+
+        // Extract the reset_token from the response
+        final resetToken = response['reset_token'];
+
+        print('Reset token received: $resetToken');
 
         await Future.delayed(const Duration(milliseconds: 1500));
         if (mounted) {
-          if (widget.fromScreen == 'signup') {
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/login',
-              (route) => false,
-            );
-          } else {
-            Navigator.pushReplacementNamed(
-              context,
-              '/reset-password',
-              arguments: {'email': widget.email},
-            );
-          }
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ResetPasswordScreen(resetToken: resetToken),
+            ),
+          );
         }
       }
     } catch (e) {
@@ -147,20 +141,15 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Wave header stays full width on all screen sizes
           const _GreenWaveHeader(),
           Expanded(
             child: SingleChildScrollView(
-              // ── DESKTOP ADAPTATION START ──
-              // Vertical padding only; horizontal moved inside ConstrainedBox
               padding: const EdgeInsets.symmetric(vertical: 28),
               child: Center(
                 child: ConstrainedBox(
-                  // Caps content width at 520px on desktop; fills screen on mobile
                   constraints: const BoxConstraints(maxWidth: 520),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    // ── DESKTOP ADAPTATION END ──
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -298,6 +287,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                         ),
                         const SizedBox(height: 16),
 
+                        // Back to Login Link - FIXED (removed resetToken reference)
                         Center(
                           child: GestureDetector(
                             onTap: () {

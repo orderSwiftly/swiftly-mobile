@@ -6,7 +6,7 @@ import '../widgets/custom_loader.dart';
 import '../core/theme/app_colors.dart';
 import '../utils/validators.dart';
 import '../services/api_service.dart';
-import 'forgot_password_screen.dart'; // Add this import
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -56,7 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
           _resetForm();
 
-          // Navigate to role-based home screen
           await Future.delayed(const Duration(milliseconds: 1500));
           if (mounted) {
             Navigator.pushReplacementNamed(context, '/home');
@@ -80,165 +79,177 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
+          // Wave header stays full width on all screen sizes
           const _GreenWaveHeader(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Welcome Text
-                    Text(
-                      'Welcome Back!',
-                      style: AppTypography.headline.copyWith(
-                        color: AppColors.primary,
-                        fontSize: 28,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Login to your account',
-                      style: AppTypography.body.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Email Field
-                    CustomTextField(
-                      controller: _emailController,
-                      label: 'Email Address',
-                      hint: 'Enter your email address',
-                      keyboardType: TextInputType.emailAddress,
-                      validator: Validators.validateEmail,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Password Field
-                    PasswordField(
-                      controller: _passwordController,
-                      label: 'Password',
-                      hint: 'Enter your password',
-                      validator: Validators.validatePassword,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Forgot Password & Remember Me Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Remember Me
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _rememberMe,
-                              activeColor: AppColors.accent,
-                              onChanged: (v) =>
-                                  setState(() => _rememberMe = v ?? false),
+              // ── DESKTOP ADAPTATION START ──
+              // Removed horizontal padding here; moved inside ConstrainedBox > Padding
+              padding: const EdgeInsets.symmetric(vertical: 28),
+              child: Center(
+                child: ConstrainedBox(
+                  // Caps form width at 520px on desktop; fills screen on mobile
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    // ── DESKTOP ADAPTATION END ──
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Welcome Back!',
+                            style: AppTypography.headline.copyWith(
+                              color: AppColors.primary,
+                              fontSize: 28,
                             ),
-                            Text(
-                              'Remember Me',
-                              style: AppTypography.body.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        // Forgot Password - UPDATED LINK
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const ForgotPasswordScreen(),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'Forgot Password?',
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Login to your account',
                             style: AppTypography.body.copyWith(
-                              color: AppColors.accent,
-                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 28),
+                          const SizedBox(height: 32),
 
-                    // Login Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleLogin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: const StadiumBorder(),
-                          disabledBackgroundColor: AppColors.accent.withOpacity(
-                            0.7,
+                          CustomTextField(
+                            controller: _emailController,
+                            label: 'Email Address',
+                            hint: 'Enter your email address',
+                            keyboardType: TextInputType.emailAddress,
+                            validator: Validators.validateEmail,
                           ),
-                        ),
-                        child: _isLoading
-                            ? const CustomLoader(
-                                size: 24,
-                                strokeWidth: 2.5,
-                                color: Colors.white,
-                              )
-                            : const Text(
-                                'Login ›',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                          const SizedBox(height: 20),
 
-                    // Sign Up Link
-                    Center(
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.pushReplacementNamed(context, '/signup');
-                        },
-                        child: RichText(
-                          text: TextSpan(
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 13,
-                            ),
+                          PasswordField(
+                            controller: _passwordController,
+                            label: 'Password',
+                            hint: 'Enter your password',
+                            validator: Validators.validatePassword,
+                          ),
+                          const SizedBox(height: 16),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const TextSpan(text: "Don't have an account? "),
-                              TextSpan(
-                                text: 'Sign up',
-                                style: TextStyle(
-                                  color: AppColors.accent,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: AppTypography.fontFamily,
+                              Row(
+                                children: [
+                                  Checkbox(
+                                    value: _rememberMe,
+                                    activeColor: AppColors.accent,
+                                    onChanged: (v) => setState(
+                                      () => _rememberMe = v ?? false,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Remember Me',
+                                    style: AppTypography.body.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ForgotPasswordScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  'Forgot Password?',
+                                  style: AppTypography.body.copyWith(
+                                    color: AppColors.accent,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
+                          const SizedBox(height: 28),
 
-                    // Terms & Privacy
-                    const Center(
-                      child: Text(
-                        'By continuing, you agree to our Terms & Privacy Policy',
-                        style: TextStyle(color: Colors.grey, fontSize: 11),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _handleLogin,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.accent,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: const StadiumBorder(),
+                                disabledBackgroundColor: AppColors.accent
+                                    .withOpacity(0.7),
+                              ),
+                              child: _isLoading
+                                  ? const CustomLoader(
+                                      size: 24,
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
+                                    )
+                                  : const Text(
+                                      'Login ›',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          Center(
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/signup',
+                                );
+                              },
+                              child: RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 13,
+                                  ),
+                                  children: [
+                                    const TextSpan(
+                                      text: "Don't have an account? ",
+                                    ),
+                                    TextSpan(
+                                      text: 'Sign up',
+                                      style: TextStyle(
+                                        color: AppColors.accent,
+                                        fontWeight: FontWeight.w600,
+                                        fontFamily: AppTypography.fontFamily,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          const Center(
+                            child: Text(
+                              'By continuing, you agree to our Terms & Privacy Policy',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -249,7 +260,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// Green Wave Header Widget
 class _GreenWaveHeader extends StatelessWidget {
   const _GreenWaveHeader();
 
@@ -275,7 +285,6 @@ class _GreenWaveHeader extends StatelessWidget {
   }
 }
 
-// Wave Clipper
 class _WaveClipper extends CustomClipper<Path> {
   const _WaveClipper();
 

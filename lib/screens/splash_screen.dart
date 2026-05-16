@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:swiftly_mobile/core/theme/app_typography.dart';
-import 'onboarding_screen.dart'; // ← Changed from signup_screen to onboarding_screen
+import 'onboarding_screen.dart';
 import '../core/theme/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -38,14 +38,11 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Navigate to onboarding after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) => const OnboardingScreen(),
-          ), // ← Changed to OnboardingScreen
+          MaterialPageRoute(builder: (_) => const OnboardingScreen()),
         );
       }
     });
@@ -63,7 +60,14 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: AppColors.text,
       body: Stack(
         children: [
-          // ── Bottom wave decoration ──────────────────────────────
+          // ── DESKTOP ADAPTATION START ──
+          // Wave fills full width on mobile; on desktop the full-screen background
+          // already looks great — the wave painter scales naturally with the window.
+          // No layout changes needed here; splash is a full-bleed branded screen
+          // that works well at any width.
+          // ── DESKTOP ADAPTATION END ──
+
+          // Bottom wave decoration
           Positioned(
             bottom: 0,
             left: 0,
@@ -74,7 +78,7 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // ── Centered logo + wordmark ────────────────────────────
+          // Centered logo + wordmark
           Center(
             child: AnimatedBuilder(
               animation: _controller,
@@ -90,12 +94,20 @@ class _SplashScreenState extends State<SplashScreen>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Logo icon
-                  Image.asset(
-                    'assets/images/swiftly-txt.png',
-                    width: 200,
-                    height: 200,
+                  // ── DESKTOP ADAPTATION START ──
+                  // Logo scales up slightly on desktop for better visual balance
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final screenWidth = MediaQuery.of(context).size.width;
+                      final logoSize = screenWidth >= 800 ? 260.0 : 200.0;
+                      return Image.asset(
+                        'assets/images/swiftly-txt.png',
+                        width: logoSize,
+                        height: logoSize,
+                      );
+                    },
                   ),
+                  // ── DESKTOP ADAPTATION END ──
                   const SizedBox(height: 16),
                 ],
               ),
@@ -107,11 +119,9 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-// ── Wave painter (two-layer green hills) ──────────────────────────────────────
 class _WavePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // Back layer — lighter green
     final backPaint = Paint()..color = AppColors.waveClr;
     final backPath = Path()
       ..moveTo(0, size.height * 0.55)
@@ -132,7 +142,6 @@ class _WavePainter extends CustomPainter {
       ..close();
     canvas.drawPath(backPath, backPaint);
 
-    // Front layer — darker green
     final frontPaint = Paint()..color = AppColors.prof;
     final frontPath = Path()
       ..moveTo(0, size.height * 0.75)

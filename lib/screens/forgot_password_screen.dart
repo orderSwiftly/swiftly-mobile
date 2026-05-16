@@ -33,7 +33,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       setState(() => _isLoading = true);
 
       try {
-        // Call API to send reset password OTP
         await _apiService.forgotPassword(email: _emailController.text.trim());
 
         if (mounted) {
@@ -42,7 +41,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             'Reset code sent to your email!',
           );
 
-          // Navigate to OTP verification screen
           await Future.delayed(const Duration(milliseconds: 1500));
           if (mounted) {
             Navigator.pushReplacement(
@@ -74,120 +72,133 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
+          // Wave header stays full width on all screen sizes
           const _GreenWaveHeader(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Icon
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.accent.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.lock_reset_outlined,
-                        size: 60,
-                        color: AppColors.accent,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Title
-                    Text(
-                      'Forgot Password?',
-                      style: AppTypography.headline.copyWith(
-                        color: AppColors.primary,
-                        fontSize: 24,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Description
-                    Text(
-                      'Enter your email address and we\'ll send you a code to reset your password.',
-                      style: AppTypography.body.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Email Field
-                    CustomTextField(
-                      controller: _emailController,
-                      label: 'Email Address',
-                      hint: 'Enter your email address',
-                      keyboardType: TextInputType.emailAddress,
-                      validator: Validators.validateEmail,
-                    ),
-                    const SizedBox(height: 28),
-
-                    // Send Reset Code Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleForgotPassword,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: const StadiumBorder(),
-                          disabledBackgroundColor: AppColors.accent.withOpacity(
-                            0.7,
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const CustomLoader(
-                                size: 24,
-                                strokeWidth: 2.5,
-                                color: Colors.white,
-                              )
-                            : const Text(
-                                'Send Reset Code ›',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Back to Login Link
-                    Center(
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.pushReplacementNamed(context, '/login');
-                        },
-                        child: RichText(
-                          text: TextSpan(
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 13,
+              // ── DESKTOP ADAPTATION START ──
+              // Removed horizontal padding here; moved inside ConstrainedBox > Padding
+              padding: const EdgeInsets.symmetric(vertical: 28),
+              child: Center(
+                child: ConstrainedBox(
+                  // Caps form width at 520px on desktop; fills screen on mobile
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    // ── DESKTOP ADAPTATION END ──
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: AppColors.accent.withOpacity(0.1),
+                              shape: BoxShape.circle,
                             ),
-                            children: [
-                              const TextSpan(text: 'Remember your password? '),
-                              TextSpan(
-                                text: 'Back to Login',
-                                style: TextStyle(
-                                  color: AppColors.accent,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: AppTypography.fontFamily,
+                            child: Icon(
+                              Icons.lock_reset_outlined,
+                              size: 60,
+                              color: AppColors.accent,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          Text(
+                            'Forgot Password?',
+                            style: AppTypography.headline.copyWith(
+                              color: AppColors.primary,
+                              fontSize: 24,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          Text(
+                            'Enter your email address and we\'ll send you a code to reset your password.',
+                            style: AppTypography.body.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 32),
+
+                          CustomTextField(
+                            controller: _emailController,
+                            label: 'Email Address',
+                            hint: 'Enter your email address',
+                            keyboardType: TextInputType.emailAddress,
+                            validator: Validators.validateEmail,
+                          ),
+                          const SizedBox(height: 28),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : _handleForgotPassword,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.accent,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: const StadiumBorder(),
+                                disabledBackgroundColor: AppColors.accent
+                                    .withOpacity(0.7),
+                              ),
+                              child: _isLoading
+                                  ? const CustomLoader(
+                                      size: 24,
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
+                                    )
+                                  : const Text(
+                                      'Send Reset Code ›',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          Center(
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/login',
+                                );
+                              },
+                              child: RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 13,
+                                  ),
+                                  children: [
+                                    const TextSpan(
+                                      text: 'Remember your password? ',
+                                    ),
+                                    TextSpan(
+                                      text: 'Back to Login',
+                                      style: TextStyle(
+                                        color: AppColors.accent,
+                                        fontWeight: FontWeight.w600,
+                                        fontFamily: AppTypography.fontFamily,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -198,14 +209,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 }
 
-// Green Wave Header Widget
 class _GreenWaveHeader extends StatelessWidget {
   const _GreenWaveHeader();
 
   @override
   Widget build(BuildContext context) {
     return ClipPath(
-      clipper: _WaveClipper(),
+      clipper: const _WaveClipper(),
       child: Container(
         height: 160,
         color: AppColors.waveClr,
@@ -224,7 +234,6 @@ class _GreenWaveHeader extends StatelessWidget {
   }
 }
 
-// Wave Clipper
 class _WaveClipper extends CustomClipper<Path> {
   const _WaveClipper();
 

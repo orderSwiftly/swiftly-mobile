@@ -6,14 +6,9 @@ import '../utils/validators.dart';
 import '../services/api_service.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
-  final String email;
-  final String code;
+  final String resetToken;
 
-  const ResetPasswordScreen({
-    super.key,
-    required this.email,
-    required this.code,
-  });
+  const ResetPasswordScreen({super.key, required this.resetToken});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -43,8 +38,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
       try {
         await _apiService.resetPassword(
-          email: widget.email,
-          code: widget.code,
+          resetToken: widget.resetToken,
           newPassword: _newPasswordController.text,
         );
 
@@ -81,20 +75,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Wave header stays full width on all screen sizes
           const _GreenWaveHeader(),
           Expanded(
             child: SingleChildScrollView(
-              // ── DESKTOP ADAPTATION START ──
-              // Vertical padding only; horizontal moved inside ConstrainedBox
               padding: const EdgeInsets.symmetric(vertical: 28),
               child: Center(
                 child: ConstrainedBox(
-                  // Caps form width at 520px on desktop; fills screen on mobile
                   constraints: const BoxConstraints(maxWidth: 520),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    // ── DESKTOP ADAPTATION END ──
                     child: Form(
                       key: _formKey,
                       child: Column(

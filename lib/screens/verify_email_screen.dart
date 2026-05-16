@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:swiftly_mobile/core/theme/app_typography.dart';
@@ -20,10 +21,13 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   final TextEditingController _pinController = TextEditingController();
   bool _isLoading = false;
 
-  int _secondsRemaining = 600;
-  int _resendSecondsRemaining = 60;
+  int _secondsRemaining = 600; // 10 minutes
+  int _resendSecondsRemaining = 60; // 1 minute cooldown
   bool _canResend = false;
   bool _codeExpired = false;
+
+  Timer? _mainTimer;
+  Timer? _resendTimer;
 
   final ApiService _apiService = ApiService();
 
@@ -37,41 +41,39 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   @override
   void dispose() {
     _pinController.dispose();
+    _mainTimer?.cancel();
+    _resendTimer?.cancel();
     super.dispose();
   }
 
   void _startMainTimer() {
-    Future.delayed(const Duration(seconds: 1), _updateMainTimer);
-  }
-
-  void _updateMainTimer() {
-    if (_secondsRemaining > 0) {
-      setState(() {
-        _secondsRemaining--;
-      });
-      Future.delayed(const Duration(seconds: 1), _updateMainTimer);
-    } else {
-      setState(() {
-        _codeExpired = true;
-      });
-    }
+    _mainTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining > 0) {
+        setState(() {
+          _secondsRemaining--;
+        });
+      } else {
+        _mainTimer?.cancel();
+        setState(() {
+          _codeExpired = true;
+        });
+      }
+    });
   }
 
   void _startResendTimer() {
-    Future.delayed(const Duration(seconds: 1), _updateResendTimer);
-  }
-
-  void _updateResendTimer() {
-    if (_resendSecondsRemaining > 0) {
-      setState(() {
-        _resendSecondsRemaining--;
-      });
-      Future.delayed(const Duration(seconds: 1), _updateResendTimer);
-    } else {
-      setState(() {
-        _canResend = true;
-      });
-    }
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_resendSecondsRemaining > 0) {
+        setState(() {
+          _resendSecondsRemaining--;
+        });
+      } else {
+        _resendTimer?.cancel();
+        setState(() {
+          _canResend = true;
+        });
+      }
+    });
   }
 
   String _formatTime(int seconds) {
@@ -81,6 +83,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   }
 
   Future<void> _resendCode() async {
+    if (_isLoading) return;
+
     setState(() {
       _isLoading = true;
       _canResend = false;
@@ -116,6 +120,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   }
 
   Future<void> _verifyCode() async {
+    if (_isLoading) return;
+
     if (_codeExpired) {
       Validators.showErrorSnackBar(
         context,
@@ -143,8 +149,12 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       if (mounted) {
         Validators.showSuccessSnackBar(
           context,
-          'Email verified successfully! 🎉',
+          'Email verified successfully!',
         );
+
+        // Clear any existing timers
+        _mainTimer?.cancel();
+        _resendTimer?.cancel();
 
         await Future.delayed(const Duration(milliseconds: 1500));
         if (mounted) {
@@ -172,20 +182,15 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       backgroundColor: AppColors.text,
       body: Column(
         children: [
-          // Wave header stays full width on all screen sizes
           const _GreenWaveHeader(),
           Expanded(
             child: SingleChildScrollView(
-              // ── DESKTOP ADAPTATION START ──
-              // Vertical padding only; horizontal moved inside ConstrainedBox
               padding: const EdgeInsets.symmetric(vertical: 28),
               child: Center(
                 child: ConstrainedBox(
-                  // Caps content width at 520px on desktop; fills screen on mobile
                   constraints: const BoxConstraints(maxWidth: 520),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    // ── DESKTOP ADAPTATION END ──
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -281,7 +286,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           length: 6,
                           obscureText: false,
                           animationType: AnimationType.fade,
-                          enabled: !_codeExpired,
+                          enabled: !_codeExpired && !_isLoading,
                           pinTheme: PinTheme(
                             shape: PinCodeFieldShape.box,
                             borderRadius: BorderRadius.circular(12),
@@ -296,7 +301,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           ),
                           keyboardType: TextInputType.number,
                           onCompleted: (value) {
-                            if (!_codeExpired) {
+                            if (!_codeExpired && !_isLoading) {
                               _verifyCode();
                             }
                           },
@@ -304,6 +309,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                         ),
                         const SizedBox(height: 32),
 
+                        // Verify Button
                         SizedBox(
                           width: double.infinity,
                           height: 52,
@@ -340,6 +346,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                         ),
                         const SizedBox(height: 20),
 
+                        // Resend Code Section
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -382,9 +389,12 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                         ),
                         const SizedBox(height: 16),
 
+                        // Back to Login Link
                         Center(
                           child: GestureDetector(
                             onTap: () {
+                              _mainTimer?.cancel();
+                              _resendTimer?.cancel();
                               Navigator.pushReplacementNamed(context, '/login');
                             },
                             child: RichText(
@@ -421,6 +431,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   }
 }
 
+// Green Wave Header Widget
 class _GreenWaveHeader extends StatelessWidget {
   const _GreenWaveHeader();
 
@@ -446,6 +457,7 @@ class _GreenWaveHeader extends StatelessWidget {
   }
 }
 
+// Wave Clipper
 class _WaveClipper extends CustomClipper<Path> {
   const _WaveClipper();
 

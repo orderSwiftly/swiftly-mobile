@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:swiftly_mobile/core/theme/app_typography.dart';
+import 'package:swiftly_mobile/screens/verify_email_screen.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/password_field.dart';
 import '../widgets/custom_loader.dart';
@@ -7,7 +8,6 @@ import '../widgets/phone_input_field.dart';
 import '../core/theme/app_colors.dart';
 import '../utils/validators.dart';
 import '../services/api_service.dart';
-import 'verify_otp_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -56,10 +56,18 @@ class _SignupScreenState extends State<SignupScreen> {
       setState(() => _isLoading = true);
 
       try {
-        final fullPhoneNumber =
-            '$_selectedCountryCode${_phoneController.text.trim().replaceFirst(RegExp(r'^0+'), '')}';
+        final rawPhone = _phoneController.text.trim();
+        final cleanedPhone = rawPhone.replaceFirst(RegExp(r'^0+'), '');
+        final fullPhoneNumber = '$_selectedCountryCode$cleanedPhone';
 
-        final response = await _apiService.signup(
+        print('========== SIGNUP DATA ==========');
+        print('First Name: ${_firstNameController.text.trim()}');
+        print('Last Name: ${_lastNameController.text.trim()}');
+        print('Email: ${_emailController.text.trim()}');
+        print('Full Phone Number: $fullPhoneNumber');
+        print('================================');
+
+        await _apiService.signup(
           first_name: _firstNameController.text.trim(),
           last_name: _lastNameController.text.trim(),
           email: _emailController.text.trim(),
@@ -71,7 +79,7 @@ class _SignupScreenState extends State<SignupScreen> {
         if (mounted) {
           Validators.showSuccessSnackBar(
             context,
-            'Account created! Please verify your OTP.',
+            'Account created! Please verify your email.',
           );
 
           _resetForm();
@@ -81,10 +89,9 @@ class _SignupScreenState extends State<SignupScreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => VerifyOtpScreen(
+                builder: (context) => VerifyEmailScreen(
                   email: _emailController.text.trim(),
                   phone: fullPhoneNumber,
-                  fromScreen: 'signup',
                 ),
               ),
             );
@@ -108,21 +115,15 @@ class _SignupScreenState extends State<SignupScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Wave header stays full width on all screen sizes
           const _GreenWaveHeader(),
           Expanded(
             child: SingleChildScrollView(
-              // ── DESKTOP ADAPTATION START ──
-              // Removed horizontal padding here; moved it inside ConstrainedBox > Padding
-              // so the constraint works correctly
               padding: const EdgeInsets.symmetric(vertical: 28),
               child: Center(
                 child: ConstrainedBox(
-                  // Caps form width at 520px on desktop; fills screen on mobile
                   constraints: const BoxConstraints(maxWidth: 520),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    // ── DESKTOP ADAPTATION END ──
                     child: Form(
                       key: _formKey,
                       child: Column(

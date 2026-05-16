@@ -9,7 +9,7 @@ import '../services/api_service.dart';
 class VerifyOtpScreen extends StatefulWidget {
   final String email;
   final String? phone;
-  final String? fromScreen; // 'signup' or 'forgot-password'
+  final String? fromScreen;
 
   const VerifyOtpScreen({
     super.key,
@@ -113,18 +113,15 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
               : 'OTP verified successfully! 🎉',
         );
 
-        // Navigate based on source screen
         await Future.delayed(const Duration(milliseconds: 1500));
         if (mounted) {
           if (widget.fromScreen == 'signup') {
-            // From signup -> go to login
             Navigator.pushNamedAndRemoveUntil(
               context,
               '/login',
               (route) => false,
             );
           } else {
-            // From forgot password -> go to reset password
             Navigator.pushReplacementNamed(
               context,
               '/reset-password',
@@ -150,181 +147,187 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          _GreenWaveHeader(),
+          // Wave header stays full width on all screen sizes
+          const _GreenWaveHeader(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // OTP Icon
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.security_outlined,
-                      size: 60,
-                      color: AppColors.accent,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Title
-                  Text(
-                    'Verify OTP',
-                    style: AppTypography.headline.copyWith(
-                      color: AppColors.primary,
-                      fontSize: 24,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Description
-                  Text(
-                    'We have sent a One-Time Password (OTP) to',
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.email,
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.accent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Enter the 6-digit OTP code below',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // PIN Code Field
-                  PinCodeTextField(
-                    controller: _pinController,
-                    length: 6,
-                    obscureText: false,
-                    animationType: AnimationType.fade,
-                    pinTheme: PinTheme(
-                      shape: PinCodeFieldShape.box,
-                      borderRadius: BorderRadius.circular(12),
-                      fieldHeight: 60,
-                      fieldWidth: 50,
-                      activeFillColor: Colors.white,
-                      inactiveFillColor: Colors.white,
-                      selectedFillColor: Colors.white,
-                      activeColor: AppColors.accent,
-                      inactiveColor: AppColors.secondary.withOpacity(0.5),
-                      selectedColor: AppColors.accent,
-                    ),
-                    keyboardType: TextInputType.number,
-                    onCompleted: (value) {
-                      _verifyOtp();
-                    },
-                    appContext: context,
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Verify Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _verifyOtp,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: const StadiumBorder(),
-                        disabledBackgroundColor: AppColors.accent.withOpacity(
-                          0.7,
-                        ),
-                      ),
-                      child: _isLoading
-                          ? const CustomLoader(
-                              size: 24,
-                              strokeWidth: 2.5,
-                              color: Colors.white,
-                            )
-                          : const Text(
-                              'Verify OTP ›',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Resend Code Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Didn't receive the code? ",
-                        style: AppTypography.body.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      if (_canResend)
-                        GestureDetector(
-                          onTap: _isLoading ? null : _resendCode,
-                          child: Text(
-                            'Resend',
-                            style: AppTypography.body.copyWith(
-                              color: AppColors.accent,
-                              fontWeight: FontWeight.bold,
-                            ),
+              // ── DESKTOP ADAPTATION START ──
+              // Vertical padding only; horizontal moved inside ConstrainedBox
+              padding: const EdgeInsets.symmetric(vertical: 28),
+              child: Center(
+                child: ConstrainedBox(
+                  // Caps content width at 520px on desktop; fills screen on mobile
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    // ── DESKTOP ADAPTATION END ──
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withOpacity(0.1),
+                            shape: BoxShape.circle,
                           ),
-                        )
-                      else
+                          child: Icon(
+                            Icons.security_outlined,
+                            size: 60,
+                            color: AppColors.accent,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
                         Text(
-                          'Resend in ${_secondsRemaining}s',
+                          'Verify OTP',
+                          style: AppTypography.headline.copyWith(
+                            color: AppColors.primary,
+                            fontSize: 24,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        Text(
+                          'We have sent a One-Time Password (OTP) to',
                           style: AppTypography.body.copyWith(
                             color: AppColors.textSecondary,
                           ),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Back to Login Link
-                  Center(
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.pushReplacementNamed(context, '/login');
-                      },
-                      child: RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 13,
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.email,
+                          style: AppTypography.body.copyWith(
+                            color: AppColors.accent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Enter the 6-digit OTP code below',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+
+                        // PIN Code Field
+                        PinCodeTextField(
+                          controller: _pinController,
+                          length: 6,
+                          obscureText: false,
+                          animationType: AnimationType.fade,
+                          pinTheme: PinTheme(
+                            shape: PinCodeFieldShape.box,
+                            borderRadius: BorderRadius.circular(12),
+                            fieldHeight: 60,
+                            fieldWidth: 50,
+                            activeFillColor: Colors.white,
+                            inactiveFillColor: Colors.white,
+                            selectedFillColor: Colors.white,
+                            activeColor: AppColors.accent,
+                            inactiveColor: AppColors.secondary.withOpacity(0.5),
+                            selectedColor: AppColors.accent,
+                          ),
+                          keyboardType: TextInputType.number,
+                          onCompleted: (value) {
+                            _verifyOtp();
+                          },
+                          appContext: context,
+                        ),
+                        const SizedBox(height: 32),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _verifyOtp,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.accent,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: const StadiumBorder(),
+                              disabledBackgroundColor: AppColors.accent
+                                  .withOpacity(0.7),
+                            ),
+                            child: _isLoading
+                                ? const CustomLoader(
+                                    size: 24,
+                                    strokeWidth: 2.5,
+                                    color: Colors.white,
+                                  )
+                                : const Text(
+                                    'Verify OTP ›',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const TextSpan(text: 'Back to '),
-                            TextSpan(
-                              text: 'Login',
-                              style: TextStyle(
-                                color: AppColors.accent,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: AppTypography.fontFamily,
+                            Text(
+                              "Didn't receive the code? ",
+                              style: AppTypography.body.copyWith(
+                                color: AppColors.textSecondary,
                               ),
                             ),
+                            if (_canResend)
+                              GestureDetector(
+                                onTap: _isLoading ? null : _resendCode,
+                                child: Text(
+                                  'Resend',
+                                  style: AppTypography.body.copyWith(
+                                    color: AppColors.accent,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              )
+                            else
+                              Text(
+                                'Resend in ${_secondsRemaining}s',
+                                style: AppTypography.body.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 16),
+
+                        Center(
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.pushReplacementNamed(context, '/login');
+                            },
+                            child: RichText(
+                              text: TextSpan(
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
+                                children: [
+                                  const TextSpan(text: 'Back to '),
+                                  TextSpan(
+                                    text: 'Login',
+                                    style: TextStyle(
+                                      color: AppColors.accent,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: AppTypography.fontFamily,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -334,14 +337,13 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   }
 }
 
-// Green Wave Header Widget
 class _GreenWaveHeader extends StatelessWidget {
   const _GreenWaveHeader();
 
   @override
   Widget build(BuildContext context) {
     return ClipPath(
-      clipper: _WaveClipper(),
+      clipper: const _WaveClipper(),
       child: Container(
         height: 160,
         color: AppColors.waveClr,
@@ -360,7 +362,6 @@ class _GreenWaveHeader extends StatelessWidget {
   }
 }
 
-// Wave Clipper
 class _WaveClipper extends CustomClipper<Path> {
   const _WaveClipper();
 
@@ -386,5 +387,5 @@ class _WaveClipper extends CustomClipper<Path> {
   }
 
   @override
-  bool shouldReclip(_WaveClipper oldClipper) => false;
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }

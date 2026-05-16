@@ -7,7 +7,7 @@ import '../widgets/phone_input_field.dart';
 import '../core/theme/app_colors.dart';
 import '../utils/validators.dart';
 import '../services/api_service.dart';
-import 'verify_otp_screen.dart'; // Add this import
+import 'verify_otp_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -28,7 +28,6 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isLoading = false;
   String _selectedCountryCode = '+234';
 
-  // Create instance of API service
   final ApiService _apiService = ApiService();
 
   @override
@@ -42,31 +41,24 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  // Helper method to reset the entire form
   void _resetForm() {
-    // Clear all text controllers
     _firstNameController.clear();
     _lastNameController.clear();
     _emailController.clear();
     _phoneController.clear();
     _passwordController.clear();
     _confirmPasswordController.clear();
-
-    // Reset form validation state (removes error messages)
     _formKey.currentState?.reset();
   }
 
-  // Handle signup with API call
   Future<void> _handleSignup() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
       try {
-        // Combine country code with phone number
         final fullPhoneNumber =
             '$_selectedCountryCode${_phoneController.text.trim().replaceFirst(RegExp(r'^0+'), '')}';
 
-        // Call the signup API
         final response = await _apiService.signup(
           first_name: _firstNameController.text.trim(),
           last_name: _lastNameController.text.trim(),
@@ -77,16 +69,13 @@ class _SignupScreenState extends State<SignupScreen> {
         );
 
         if (mounted) {
-          // Show success message
           Validators.showSuccessSnackBar(
             context,
             'Account created! Please verify your OTP.',
           );
 
-          // Reset form to empty state
           _resetForm();
 
-          // Navigate to OTP verification screen after 1.5 seconds
           await Future.delayed(const Duration(milliseconds: 1500));
           if (mounted) {
             Navigator.pushReplacement(
@@ -102,7 +91,6 @@ class _SignupScreenState extends State<SignupScreen> {
           }
         }
       } catch (e) {
-        // Show error message using validator helper
         if (mounted) {
           Validators.showErrorSnackBar(context, e.toString());
         }
@@ -120,152 +108,164 @@ class _SignupScreenState extends State<SignupScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
+          // Wave header stays full width on all screen sizes
           const _GreenWaveHeader(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // First Name & Last Name Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: CustomTextField(
-                            controller: _firstNameController,
-                            label: 'First Name',
-                            hint: 'Enter your first name',
-                            validator: Validators.validateName,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: CustomTextField(
-                            controller: _lastNameController,
-                            label: 'Last Name',
-                            hint: 'Enter your last name',
-                            validator: Validators.validateName,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Email Field
-                    CustomTextField(
-                      controller: _emailController,
-                      label: 'Email Address',
-                      hint: 'Enter your email address',
-                      keyboardType: TextInputType.emailAddress,
-                      validator: Validators.validateEmail,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Phone Field with Country Code
-                    PhoneInputField(
-                      controller: _phoneController,
-                      onCountryCodeChanged: (code) {
-                        _selectedCountryCode = code;
-                      },
-                      validator: Validators.validatePhone,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Password Field
-                    PasswordField(
-                      controller: _passwordController,
-                      label: 'Create Password',
-                      hint: 'at least 6 characters',
-                      validator: Validators.validatePassword,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Confirm Password Field
-                    PasswordField(
-                      controller: _confirmPasswordController,
-                      label: 'Confirm Password',
-                      hint: 'Re-enter your password',
-                      validator: (value) => Validators.validateConfirmPassword(
-                        value,
-                        _passwordController.text,
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-
-                    // Sign Up Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleSignup,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: const StadiumBorder(),
-                          disabledBackgroundColor: AppColors.accent.withOpacity(
-                            0.7,
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const CustomLoader(
-                                size: 24,
-                                strokeWidth: 2.5,
-                                color: Colors.white,
-                              )
-                            : const Text(
-                                'Sign up ›',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+              // ── DESKTOP ADAPTATION START ──
+              // Removed horizontal padding here; moved it inside ConstrainedBox > Padding
+              // so the constraint works correctly
+              padding: const EdgeInsets.symmetric(vertical: 28),
+              child: Center(
+                child: ConstrainedBox(
+                  // Caps form width at 520px on desktop; fills screen on mobile
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    // ── DESKTOP ADAPTATION END ──
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _firstNameController,
+                                  label: 'First Name',
+                                  hint: 'Enter your first name',
+                                  validator: Validators.validateName,
                                 ),
                               ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Login Link
-                    Center(
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.pushReplacementNamed(context, '/login');
-                        },
-                        child: RichText(
-                          text: TextSpan(
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 13,
-                            ),
-                            children: [
-                              const TextSpan(
-                                text: 'Already have an account?  ',
-                              ),
-                              TextSpan(
-                                text: 'Login here',
-                                style: TextStyle(
-                                  color: AppColors.accent,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: AppTypography.fontFamily,
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _lastNameController,
+                                  label: 'Last Name',
+                                  hint: 'Enter your last name',
+                                  validator: Validators.validateName,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
+                          const SizedBox(height: 20),
 
-                    // Terms & Privacy
-                    const Center(
-                      child: Text(
-                        'By signing up, you agree to our Terms & Privacy Policy',
-                        style: TextStyle(color: Colors.grey, fontSize: 11),
+                          CustomTextField(
+                            controller: _emailController,
+                            label: 'Email Address',
+                            hint: 'Enter your email address',
+                            keyboardType: TextInputType.emailAddress,
+                            validator: Validators.validateEmail,
+                          ),
+                          const SizedBox(height: 20),
+
+                          PhoneInputField(
+                            controller: _phoneController,
+                            onCountryCodeChanged: (code) {
+                              _selectedCountryCode = code;
+                            },
+                            validator: Validators.validatePhone,
+                          ),
+                          const SizedBox(height: 20),
+
+                          PasswordField(
+                            controller: _passwordController,
+                            label: 'Create Password',
+                            hint: 'at least 6 characters',
+                            validator: Validators.validatePassword,
+                          ),
+                          const SizedBox(height: 20),
+
+                          PasswordField(
+                            controller: _confirmPasswordController,
+                            label: 'Confirm Password',
+                            hint: 'Re-enter your password',
+                            validator: (value) =>
+                                Validators.validateConfirmPassword(
+                                  value,
+                                  _passwordController.text,
+                                ),
+                          ),
+                          const SizedBox(height: 28),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _handleSignup,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.accent,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: const StadiumBorder(),
+                                disabledBackgroundColor: AppColors.accent
+                                    .withOpacity(0.7),
+                              ),
+                              child: _isLoading
+                                  ? const CustomLoader(
+                                      size: 24,
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
+                                    )
+                                  : const Text(
+                                      'Sign up ›',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          Center(
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/login',
+                                );
+                              },
+                              child: RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 13,
+                                  ),
+                                  children: [
+                                    const TextSpan(
+                                      text: 'Already have an account?  ',
+                                    ),
+                                    TextSpan(
+                                      text: 'Login here',
+                                      style: TextStyle(
+                                        color: AppColors.accent,
+                                        fontWeight: FontWeight.w600,
+                                        fontFamily: AppTypography.fontFamily,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          const Center(
+                            child: Text(
+                              'By signing up, you agree to our Terms & Privacy Policy',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -276,7 +276,6 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 }
 
-// Green Wave Header Widget
 class _GreenWaveHeader extends StatelessWidget {
   const _GreenWaveHeader();
 
@@ -302,7 +301,6 @@ class _GreenWaveHeader extends StatelessWidget {
   }
 }
 
-// Wave Clipper for Custom Shape
 class _WaveClipper extends CustomClipper<Path> {
   const _WaveClipper();
 

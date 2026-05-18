@@ -266,6 +266,24 @@ class ApiService {
     }
   }
 
+// Add these methods to your existing ApiService class
+
+  // Save onboarding completion status
+  Future<void> saveOnboardingCompleted() async {
+    await _storage.write(key: 'onboarding_completed', value: 'true');
+  }
+
+  // Check if onboarding was completed
+  Future<bool> isOnboardingCompleted() async {
+    final value = await _storage.read(key: 'onboarding_completed');
+    return value == 'true';
+  }
+
+  // Optional: Reset onboarding (for testing/debugging)
+  Future<void> resetOnboarding() async {
+    await _storage.delete(key: 'onboarding_completed');
+  }
+
   // Verify customer email with code
   Future<Map<String, dynamic>> verifyEmail({
     required String email,
@@ -659,4 +677,5 @@ class ApiService {
       throw Exception('Network error: $e');
     }
   }
+
 }

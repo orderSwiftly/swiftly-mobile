@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Add this
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
+import '../services/api_service.dart'; // Add this
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -12,6 +14,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  final ApiService _apiService = ApiService(); // Add this
 
   final List<Map<String, String>> _pages = [
     {
@@ -33,6 +36,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           'Order anything on campus such as food, \nessentials, and more all in one app.',
     },
   ];
+
+  // Add this method to handle navigation and save onboarding status
+  Future<void> _handleNavigation() async {
+    if (_currentPage < _pages.length - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      // Save that onboarding is completed
+      await _apiService.saveOnboardingCompleted();
+
+      // Navigate to signup screen
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/signup');
+      }
+    }
+  }
+
+  // Add this method for skip button
+  Future<void> _handleSkip() async {
+    await _apiService.saveOnboardingCompleted();
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/signup');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -183,16 +212,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   width: 280,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (_currentPage < _pages.length - 1) {
-                        _pageController.nextPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
-                      } else {
-                        Navigator.pushReplacementNamed(context, '/signup');
-                      }
-                    },
+                    onPressed: _handleNavigation, // Updated
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.accent,
                       shape: RoundedRectangleBorder(
@@ -216,9 +236,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 // Skip / Login links
                 if (_currentPage < _pages.length - 1)
                   TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/signup');
-                    },
+                    onPressed: _handleSkip, // Updated
                     child: Text(
                       'Skip',
                       style: AppTypography.body.copyWith(
@@ -240,8 +258,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () {
-                          Navigator.pushReplacementNamed(context, '/login');
+                        onTap: () async {
+                          // Save onboarding completion before going to login
+                          await _apiService.saveOnboardingCompleted();
+                          if (mounted) {
+                            Navigator.pushReplacementNamed(context, '/login');
+                          }
                         },
                         child: Text(
                           'Login',
@@ -265,7 +287,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
   // ── DESKTOP ADAPTATION END ──
 
-  // Original mobile layout — unchanged
+  // Original mobile layout — unchanged but with updated navigation
   Widget _buildMobileLayout() {
     return Column(
       children: [
@@ -361,16 +383,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_currentPage < _pages.length - 1) {
-                      _pageController.nextPage(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
-                    } else {
-                      Navigator.pushReplacementNamed(context, '/signup');
-                    }
-                  },
+                  onPressed: _handleNavigation, // Updated
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.accent,
                     shape: RoundedRectangleBorder(
@@ -392,9 +405,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
               if (_currentPage < _pages.length - 1)
                 TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/signup');
-                  },
+                  onPressed: _handleSkip, // Updated
                   child: Text(
                     'Skip',
                     style: AppTypography.body.copyWith(
@@ -416,8 +427,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {
-                        Navigator.pushReplacementNamed(context, '/signup');
+                      onTap: () async {
+                        // Save onboarding completion before going to login
+                        await _apiService.saveOnboardingCompleted();
+                        if (mounted) {
+                          Navigator.pushReplacementNamed(context, '/login');
+                        }
                       },
                       child: Text(
                         'Login',

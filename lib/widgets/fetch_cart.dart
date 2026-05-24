@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/cart_service.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
+import 'remove_from_cart.dart';
 
 class FetchCart extends StatefulWidget {
   final Function(int)? onCartItemCountChanged;
@@ -40,14 +41,6 @@ class _FetchCartState extends State<FetchCart> {
     });
 
     final items = await _cartService.fetchCart();
-    if (items.isNotEmpty) {
-      print('DEBUG cart item: ${items[0]}'); // print the full first item
-    }
-
-    // Debug: check what keys are returned
-    // if (items.isNotEmpty) {
-    //   print('Cart item keys: ${items[0].keys.toList()}');
-    // }
 
     double total = 0.0;
     int itemCount = 0;
@@ -71,9 +64,29 @@ class _FetchCartState extends State<FetchCart> {
     }
   }
 
+  // Update quantity using increase/decrease actions
+  Future<void> _updateQuantity(String productId, String action) async {
+    setState(() => _isUpdating = true);
+
+    final result = await _cartService.updateCartItem(productId, action);
+
+    if (result != null) {
+      await _loadCart();
+      _showSnackBar(
+        action == 'increase' ? 'Quantity increased' : 'Quantity decreased',
+        Colors.green,
+      );
+    } else {
+      _showSnackBar('Failed to update quantity', Colors.red);
+    }
+
+    setState(() => _isUpdating = false);
+  }
+
+  // Set quantity directly (for manual entry)
   Future<void> _setQuantity(String productId, int newQuantity) async {
     if (newQuantity < 1) {
-      await _removeItem(productId);
+      await _removeItemFromList(productId);
       return;
     }
 
@@ -91,19 +104,9 @@ class _FetchCartState extends State<FetchCart> {
     setState(() => _isUpdating = false);
   }
 
-  Future<void> _removeItem(String productId) async {
-    setState(() => _isUpdating = true);
-
-    final success = await _cartService.removeFromCart(productId);
-
-    if (success) {
-      await _loadCart();
-      _showSnackBar('Item removed from cart', Colors.green);
-    } else {
-      _showSnackBar('Failed to remove item', Colors.red);
-    }
-
-    setState(() => _isUpdating = false);
+  // Helper method to remove item and reload cart
+  Future<void> _removeItemFromList(String productId) async {
+    await _loadCart();
   }
 
   void _showQuantityDialog(
@@ -296,7 +299,15 @@ class _FetchCartState extends State<FetchCart> {
         final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
         final total = price * quantity;
         final productName = item['name']?.toString() ?? '';
-        final productId = item['product_id']?.toString() ?? '';
+        String productId = '';
+final rawId = item['product_id'] ?? item['productId'] ?? item['_id'] ?? item['id'];
+if (rawId is Map) {
+  productId = rawId['\$oid']?.toString() ?? rawId['_id']?.toString() ?? '';
+} else if (rawId != null) {
+  productId = rawId.toString();
+}
+
+print('Cart item "${item['name']}" → productId: "$productId"');
 
         return _buildCartItem(
           productId: productId,
@@ -488,13 +499,14 @@ class _FetchCartState extends State<FetchCart> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  // Decrease button
                                   IconButton(
                                     icon: const Icon(Icons.remove, size: 16),
                                     onPressed: _isUpdating
                                         ? null
-                                        : () => _setQuantity(
+                                        : () => _updateQuantity(
                                             productId,
-                                            quantity - 1,
+                                            'decrease',
                                           ),
                                     constraints: const BoxConstraints(
                                       minWidth: 28,
@@ -512,13 +524,14 @@ class _FetchCartState extends State<FetchCart> {
                                       ),
                                     ),
                                   ),
+                                  // Increase button
                                   IconButton(
                                     icon: const Icon(Icons.add, size: 16),
                                     onPressed: _isUpdating
                                         ? null
-                                        : () => _setQuantity(
+                                        : () => _updateQuantity(
                                             productId,
-                                            quantity + 1,
+                                            'increase',
                                           ),
                                     constraints: const BoxConstraints(
                                       minWidth: 28,
@@ -557,24 +570,16 @@ class _FetchCartState extends State<FetchCart> {
                     ],
                   ),
 
-                  // Remove button
+                  // Remove button - Using the reusable RemoveFromCartButton widget
                   Align(
                     alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: _isUpdating
-                          ? null
-                          : () => _removeItem(productId),
-                      icon: const Icon(Icons.delete_outline, size: 14),
-                      label: const Text(
-                        'Remove',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(0, 0),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
+                    child: RemoveFromCartButton(
+                      productId: productId,
+                      productName: productName,
+                      size: 14,
+                      onRemoved: () {
+                        _loadCart();
+                      },
                     ),
                   ),
                 ],

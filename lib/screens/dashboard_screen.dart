@@ -5,11 +5,47 @@ import '../widgets/navbar.dart';
 import '../widgets/product_card.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
-import 'customers/explore_screen.dart';
 import '../services/product_service.dart';
+import '../widgets/list_categories.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  String _selectedCategory = 'All';
+  final ProductService _productService = ProductService();
+
+  Future<List<Map<String, dynamic>>> _loadProducts() async {
+    try {
+      final products = await _productService.exploreProducts(
+        'BABCOCK_MAIN_CAMPUS',
+      );
+      return products;
+    } catch (e) {
+      print('Error loading products preview: $e');
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _loadFilteredProducts() async {
+    try {
+      final allProducts = await _loadProducts();
+      if (_selectedCategory == 'All') {
+        return allProducts;
+      }
+      return allProducts.where((product) {
+        final productCategory = product['category'] ?? '';
+        return productCategory.toLowerCase() == _selectedCategory.toLowerCase();
+      }).toList();
+    } catch (e) {
+      print('Error loading filtered products: $e');
+      return [];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,209 +74,103 @@ class DashboardScreen extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Categories Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Categories',
-                  style: AppTypography.body.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                    color: AppColors.prof,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(context, '/explore');
-                  },
-                  child: Row(
-                    children: [
-                      Text(
-                        'See All',
-                        style: AppTypography.body.copyWith(
-                          color: AppColors.prof,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 11,
-                        color: AppColors.accent,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Category Chips
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: SizedBox(
-              height: 40,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  _buildCategoryChip(context, 'All', Icons.dashboard),
-                  const SizedBox(width: 8),
-                  _buildCategoryChip(context, 'Food', Icons.fastfood),
-                  const SizedBox(width: 8),
-                  _buildCategoryChip(context, 'Fashion', Icons.shopping_bag),
-                  const SizedBox(width: 8),
-                  _buildCategoryChip(context, 'Gadgets', Icons.devices),
-                  const SizedBox(width: 8),
-                  _buildCategoryChip(
-                    context,
-                    'Electronics',
-                    Icons.electrical_services,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Popular Products Title
-          // Popular Products Title
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Popular Products',
-                style: AppTypography.title.copyWith(
-                  fontSize: 16,
-                  color: AppColors.prof,
-                ),
-              ),
-            ),
+          // Categories Section - Using ListCategories widget
+          ListCategories(
+            onCategorySelected: (category) {
+              setState(() {
+                _selectedCategory = category;
+              });
+            },
           ),
 
           const SizedBox(height: 8),
 
           // Products Preview - Use Flexible to prevent overflow
-          Flexible(child: _buildProductsPreview(context, isMobile)),
+          Flexible(
+            child: FutureBuilder(
+              future: _loadFilteredProducts(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.accent),
+                  );
+                }
+
+                if (snapshot.hasError ||
+                    !snapshot.hasData ||
+                    snapshot.data!.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          size: 48,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _selectedCategory == 'All'
+                              ? 'No products available'
+                              : 'No products in $_selectedCategory',
+                          style: AppTypography.body.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final products = snapshot.data!;
+                // REMOVED THE .take(4) - NOW SHOWING ALL PRODUCTS
+                final crossAxisCount = isMobile ? 2 : 4;
+
+                return GridView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    childAspectRatio: 0.65,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                  ),
+                  itemCount: products.length, // NOW USING FULL PRODUCTS LIST
+                  shrinkWrap: true,
+                  physics: const BouncingScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    final product = products[index];
+                    final store = product['store'] as Map<String, dynamic>?;
+
+                    return ProductCard(
+                      id: product['id'],
+                      name: product['name'] ?? 'Product Name',
+                      price:
+                          double.tryParse(
+                            product['price']?.toString() ?? '0',
+                          ) ??
+                          0.0,
+                      description: product['description'],
+                      category: product['category'] ?? 'Uncategorized',
+                      storeName: store?['name'] ?? 'Unknown Store',
+                      stock: product['stock'] ?? 0,
+                      rating: (product['rating'] as num?)?.toDouble() ?? 0.0,
+                      reviewsCount: product['reviews_count'] ?? 0,
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/product-details',
+                          arguments: product,
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
-  }
-
-  Widget _buildCategoryChip(BuildContext context, String label, IconData icon) {
-    return FilterChip(
-      label: Text(label),
-      onSelected: (selected) {
-        Navigator.pushNamed(
-          context,
-          '/explore',
-          arguments: {'category': label},
-        );
-      },
-      backgroundColor: AppColors.text,
-      selectedColor: AppColors.waveClr,
-      side: BorderSide(color: AppColors.secondary),
-      labelStyle: AppTypography.body.copyWith(
-        color: AppColors.waveClr,
-        fontSize: 13,
-      ),
-      avatar: Icon(icon, size: 16, color: AppColors.waveClr),
-    );
-  }
-
-  Widget _buildProductsPreview(BuildContext context, bool isMobile) {
-    return FutureBuilder(
-      future: _loadProducts(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppColors.accent),
-          );
-        }
-
-        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.inventory_2_outlined,
-                  size: 48,
-                  color: AppColors.textSecondary,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'No products available',
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final products = snapshot.data!;
-        final previewProducts = products.take(4).toList();
-        final crossAxisCount = isMobile ? 2 : 4;
-
-        return GridView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            childAspectRatio: 0.65,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-          ),
-          itemCount: previewProducts.length,
-          shrinkWrap: true,
-          physics: const BouncingScrollPhysics(),
-          itemBuilder: (context, index) {
-            final product = previewProducts[index];
-            final store = product['store'] as Map<String, dynamic>?;
-
-            return ProductCard(
-              id: product['id'],
-              name: product['name'] ?? 'Product Name',
-              price:
-                  double.tryParse(product['price']?.toString() ?? '0') ?? 0.0,
-              description: product['description'],
-              category: product['category'] ?? 'Uncategorized',
-              storeName: store?['name'] ?? 'Unknown Store',
-              stock: product['stock'] ?? 0,
-              rating: (product['rating'] as num?)?.toDouble() ?? 0.0,
-              reviewsCount: product['reviews_count'] ?? 0,
-              onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  '/product-details',
-                  arguments: product,
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<List<Map<String, dynamic>>> _loadProducts() async {
-    try {
-      final productService = ProductService();
-      final products = await productService.exploreProducts(
-        'BABCOCK_MAIN_CAMPUS',
-      );
-      return products;
-    } catch (e) {
-      print('Error loading products preview: $e');
-      return [];
-    }
   }
 }
 

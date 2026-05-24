@@ -9,6 +9,8 @@ class ProductService {
       dotenv.env['API_URL'] ?? 'https://your-api.com/api';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
+
+  // --------------------- Explore Products ---------------------
   Future<List<Map<String, dynamic>>> exploreProducts(String institution) async {
     try {
       // Get auth token from secure storage

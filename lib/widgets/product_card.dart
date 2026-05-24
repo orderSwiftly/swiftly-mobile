@@ -74,7 +74,9 @@ class ProductCard extends StatelessWidget {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: stock <= 10 ? const Color.fromARGB(255, 255, 123, 0) : AppColors.waveClr,
+                        color: stock <= 10
+                            ? const Color.fromARGB(255, 255, 123, 0)
+                            : AppColors.waveClr,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -245,7 +247,20 @@ class ProductCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      AddToCartButton(onPressed: () {}, size: 14),
+                      AddToCartButton(
+                        productId: id,
+                        stock: stock,
+                        size: 14,
+                        onSuccess: () {
+                          // Optional: Show a message or update UI
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Item added to cart!'),
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ],

@@ -9,6 +9,7 @@ class RemoveFromCartButton extends StatefulWidget {
   final String productName;
   final VoidCallback? onRemoved;
   final double? size;
+  final bool iconOnly;
 
   const RemoveFromCartButton({
     super.key,
@@ -16,6 +17,7 @@ class RemoveFromCartButton extends StatefulWidget {
     required this.productName,
     this.onRemoved,
     this.size,
+    this.iconOnly = false,
   });
 
   @override
@@ -28,7 +30,7 @@ class _RemoveFromCartButtonState extends State<RemoveFromCartButton> {
 
   Future<void> _removeItem() async {
     if (_isLoading) return;
-    // Show confirmation dialog
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -53,20 +55,14 @@ class _RemoveFromCartButtonState extends State<RemoveFromCartButton> {
 
     if (confirm != true) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     final success = await _cartService.removeFromCart(widget.productId);
 
-    setState(() {
-      _isLoading = false;
-    });
+    setState(() => _isLoading = false);
 
     if (success) {
-      if (widget.onRemoved != null) {
-        widget.onRemoved!();
-      }
+      if (widget.onRemoved != null) widget.onRemoved!();
       _showSnackBar('${widget.productName} removed from cart', Colors.green);
     } else {
       _showSnackBar('Failed to remove item', Colors.red);
@@ -85,6 +81,29 @@ class _RemoveFromCartButtonState extends State<RemoveFromCartButton> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.iconOnly) {
+      return IconButton(
+        onPressed: _isLoading ? null : _removeItem,
+        icon: _isLoading
+            ? SizedBox(
+                height: widget.size ?? 18,
+                width: widget.size ?? 18,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.red,
+                ),
+              )
+            : Icon(
+                Icons.delete_outline,
+                size: widget.size ?? 20,
+                color: Colors.red,
+              ),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        splashRadius: 20,
+      );
+    }
+
     return TextButton.icon(
       onPressed: _isLoading ? null : _removeItem,
       icon: _isLoading

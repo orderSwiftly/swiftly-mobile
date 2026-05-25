@@ -26,7 +26,6 @@ class _FetchCartState extends State<FetchCart> {
   List<Map<String, dynamic>> _cartItems = [];
   bool _isLoading = true;
   bool _isUpdating = false;
-  double _totalPrice = 0.0;
   int _totalItems = 0;
 
   @override
@@ -36,40 +35,59 @@ class _FetchCartState extends State<FetchCart> {
   }
 
   Future<void> _loadCart() async {
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     final items = await _cartService.fetchCart();
 
-    double total = 0.0;
     int itemCount = 0;
-
     for (var item in items) {
-      final quantity = item['quantity'] as int? ?? 0;
-      final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
-      total += price * quantity;
-      itemCount += quantity;
+      itemCount += item['quantity'] as int? ?? 0;
     }
 
     setState(() {
       _cartItems = items;
-      _totalPrice = total;
       _totalItems = itemCount;
       _isLoading = false;
     });
 
-    if (widget.onCartItemCountChanged != null) {
-      widget.onCartItemCountChanged!(_totalItems);
-    }
+    widget.onCartItemCountChanged?.call(_totalItems);
   }
 
-  // Update quantity using increase/decrease actions
+  /// Groups cart items by zone_name. Items with no zone fall under 'Other'.
+  Map<String, List<Map<String, dynamic>>> get _itemsByZone {
+    final Map<String, List<Map<String, dynamic>>> grouped = {};
+    for (final item in _cartItems) {
+      final zone = item['zone_name']?.toString().trim();
+      final key = (zone != null && zone.isNotEmpty) ? zone : 'Other';
+      grouped.putIfAbsent(key, () => []).add(item);
+    }
+    return grouped;
+  }
+
+  String _extractProductId(Map<String, dynamic> item) {
+    final rawId =
+        item['product_id'] ?? item['productId'] ?? item['_id'] ?? item['id'];
+    if (rawId is Map) {
+      return rawId['\$oid']?.toString() ?? rawId['_id']?.toString() ?? '';
+    }
+    return rawId?.toString() ?? '';
+  }
+
+  double _zoneTotal(List<Map<String, dynamic>> items) {
+    return items.fold(0.0, (sum, item) {
+      final qty = item['quantity'] as int? ?? 0;
+      final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
+      return sum + price * qty;
+    });
+  }
+
+  int _zoneItemCount(List<Map<String, dynamic>> items) {
+    return items.fold(0, (sum, item) => sum + (item['quantity'] as int? ?? 0));
+  }
+
   Future<void> _updateQuantity(String productId, String action) async {
     setState(() => _isUpdating = true);
-
     final result = await _cartService.updateCartItem(productId, action);
-
     if (result != null) {
       await _loadCart();
       _showSnackBar(
@@ -79,34 +97,23 @@ class _FetchCartState extends State<FetchCart> {
     } else {
       _showSnackBar('Failed to update quantity', Colors.red);
     }
-
     setState(() => _isUpdating = false);
   }
 
-  // Set quantity directly (for manual entry)
   Future<void> _setQuantity(String productId, int newQuantity) async {
     if (newQuantity < 1) {
-      await _removeItemFromList(productId);
+      await _loadCart();
       return;
     }
-
     setState(() => _isUpdating = true);
-
     final result = await _cartService.setCartQuantity(productId, newQuantity);
-
     if (result != null) {
       await _loadCart();
-      _showSnackBar('Quantity updated successfully', Colors.green);
+      _showSnackBar('Quantity updated', AppColors.prof);
     } else {
       _showSnackBar('Failed to update quantity', Colors.red);
     }
-
     setState(() => _isUpdating = false);
-  }
-
-  // Helper method to remove item and reload cart
-  Future<void> _removeItemFromList(String productId) async {
-    await _loadCart();
   }
 
   void _showQuantityDialog(
@@ -114,9 +121,7 @@ class _FetchCartState extends State<FetchCart> {
     String productName,
     int currentQuantity,
   ) {
-    final TextEditingController quantityController = TextEditingController();
-    quantityController.text = currentQuantity.toString();
-
+    final controller = TextEditingController(text: currentQuantity.toString());
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -133,7 +138,7 @@ class _FetchCartState extends State<FetchCart> {
             ),
             const SizedBox(height: 16),
             TextField(
-              controller: quantityController,
+              controller: controller,
               keyboardType: TextInputType.number,
               autofocus: true,
               decoration: InputDecoration(
@@ -153,13 +158,14 @@ class _FetchCartState extends State<FetchCart> {
           ),
           ElevatedButton(
             onPressed: () {
-              final newQuantity = int.tryParse(quantityController.text) ?? 0;
+              final newQty = int.tryParse(controller.text) ?? 0;
               Navigator.pop(context);
-              if (newQuantity > 0) {
-                _setQuantity(productId, newQuantity);
-              }
+              if (newQty > 0) _setQuantity(productId, newQty);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.prof,
+              foregroundColor: AppColors.text,
+            ),
             child: const Text('Update'),
           ),
         ],
@@ -177,8 +183,19 @@ class _FetchCartState extends State<FetchCart> {
     );
   }
 
-  void _navigateToCheckout() {
-    Navigator.pushNamed(context, '/checkout');
+  void _navigateToCheckout(
+    String zoneName,
+    List<Map<String, dynamic>> zoneItems,
+  ) {
+    Navigator.pushNamed(
+      context,
+      '/checkout',
+      arguments: {
+        'zone_name': zoneName,
+        'items': zoneItems,
+        'total': _zoneTotal(zoneItems),
+      },
+    );
   }
 
   @override
@@ -193,10 +210,8 @@ class _FetchCartState extends State<FetchCart> {
               ? _buildLoadingState()
               : _cartItems.isEmpty
               ? _buildEmptyState()
-              : _buildCartList(isMobile),
+              : _buildZonedCartList(isMobile),
         ),
-        if (widget.showCheckoutButton && _cartItems.isNotEmpty)
-          _buildCheckoutSection(isMobile),
       ],
     );
   }
@@ -229,9 +244,9 @@ class _FetchCartState extends State<FetchCart> {
                   ? null
                   : () async {
                       for (var item in List.from(_cartItems)) {
-                        final productId = item['product_id']?.toString() ?? '';
-                        if (productId.isNotEmpty) {
-                          await _cartService.removeFromCart(productId);
+                        final id = _extractProductId(item);
+                        if (id.isNotEmpty) {
+                          await _cartService.removeFromCart(id);
                         }
                       }
                       await _loadCart();
@@ -289,397 +304,389 @@ class _FetchCartState extends State<FetchCart> {
     );
   }
 
-  Widget _buildCartList(bool isMobile) {
+  // ─── Zoned list ────────────────────────────────────────────────────────────
+
+  Widget _buildZonedCartList(bool isMobile) {
+    final grouped = _itemsByZone;
+    final zones = grouped.keys.toList();
+
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _cartItems.length,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      itemCount: zones.length,
       itemBuilder: (context, index) {
-        final item = _cartItems[index];
-        final quantity = item['quantity'] as int? ?? 0;
-        final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
-        final total = price * quantity;
-        final productName = item['name']?.toString() ?? '';
-        String productId = '';
-final rawId = item['product_id'] ?? item['productId'] ?? item['_id'] ?? item['id'];
-if (rawId is Map) {
-  productId = rawId['\$oid']?.toString() ?? rawId['_id']?.toString() ?? '';
-} else if (rawId != null) {
-  productId = rawId.toString();
-}
-
-print('Cart item "${item['name']}" → productId: "$productId"');
-
-        return _buildCartItem(
-          productId: productId,
-          productName: productName,
-          displayName: productName,
-          price: price,
-          quantity: quantity,
-          total: total,
-          storeName: item['store_name'] ?? 'Unknown Store',
-          zoneName: item['zone_name'] ?? '',
-          imageUrl: item['image_url'],
-        );
+        final zoneName = zones[index];
+        final zoneItems = grouped[zoneName]!;
+        return _buildZoneSection(zoneName, zoneItems, isMobile);
       },
+    );
+  }
+
+  Widget _buildZoneSection(
+    String zoneName,
+    List<Map<String, dynamic>> zoneItems,
+    bool isMobile,
+  ) {
+    final total = _zoneTotal(zoneItems);
+    final count = _zoneItemCount(zoneItems);
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.text,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.textHint.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Zone header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.prof.withOpacity(0.08),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.location_on, size: 16, color: AppColors.prof),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    zoneName,
+                    style: AppTypography.body.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: AppColors.prof,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.prof.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '$count item${count != 1 ? 's' : ''}',
+                    style: AppTypography.caption.copyWith(
+                      fontSize: 11,
+                      color: AppColors.prof,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Items
+          ...zoneItems.map(
+            (item) => _buildCartItem(
+              productId: _extractProductId(item),
+              productName: item['name']?.toString() ?? '',
+              price: double.tryParse(item['price']?.toString() ?? '0') ?? 0.0,
+              quantity: item['quantity'] as int? ?? 0,
+              storeName: item['store_name']?.toString() ?? 'Unknown Store',
+              imageUrl: item['image_url']?.toString(),
+            ),
+          ),
+
+          // Zone checkout footer
+          if (widget.showCheckoutButton)
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              decoration: BoxDecoration(
+                color: AppColors.textHint.withOpacity(0.05),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(16),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Zone Total',
+                        style: AppTypography.caption.copyWith(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      Text(
+                        '₦${total.toStringAsFixed(0)}',
+                        style: AppTypography.title.copyWith(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.accent,
+                        ),
+                      ),
+                    ],
+                  ),
+                  ElevatedButton(
+                    onPressed: _isUpdating
+                        ? null
+                        : () => _navigateToCheckout(zoneName, zoneItems),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.prof,
+                      foregroundColor: AppColors.text,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'Checkout Zone',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 
   Widget _buildCartItem({
     required String productId,
     required String productName,
-    required String displayName,
     required double price,
     required int quantity,
-    required double total,
     required String storeName,
-    String? zoneName,
     String? imageUrl,
   }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.textHint.withOpacity(0.2)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Product Image
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.textHint.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: imageUrl != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.inventory_2_outlined,
-                          color: AppColors.textSecondary,
-                          size: 32,
-                        ),
-                      ),
-                    )
-                  : Icon(
-                      Icons.inventory_2_outlined,
-                      color: AppColors.textSecondary,
-                      size: 32,
-                    ),
-            ),
-            const SizedBox(width: 12),
+    final total = price * quantity;
 
-            // Product Details
-            Expanded(
-              child: Column(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: AppColors.textHint.withOpacity(0.15)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product Name
-                  Text(
-                    displayName,
-                    style: AppTypography.body.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                  // Image
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: AppColors.textHint.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-
-                  // Store Name
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.store_outlined,
-                        size: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          storeName,
-                          style: AppTypography.caption.copyWith(
+                    child: imageUrl != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Icon(
+                                Icons.inventory_2_outlined,
+                                color: AppColors.textSecondary,
+                                size: 28,
+                              ),
+                            ),
+                          )
+                        : Icon(
+                            Icons.inventory_2_outlined,
                             color: AppColors.textSecondary,
-                            fontSize: 11,
+                            size: 28,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
                   ),
+                  const SizedBox(width: 12),
 
-                  // Zone Name
-                  if (zoneName != null && zoneName.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Row(
+                  // Name + store + delete
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: 10,
-                          color: AppColors.textSecondary,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                productName,
+                                style: AppTypography.body.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            RemoveFromCartButton(
+                              productId: productId,
+                              productName: productName,
+                              iconOnly: true,
+                              onRemoved: _loadCart,
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          zoneName,
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 10,
-                          ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.store_outlined,
+                              size: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                storeName,
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 11,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
-                    ),
-                  ],
-
-                  const SizedBox(height: 8),
-
-                  // Price and Quantity Controls
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Price
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Price',
-                            style: AppTypography.caption.copyWith(
-                              fontSize: 10,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          Text(
-                            '₦${price.toStringAsFixed(0)}',
-                            style: AppTypography.body.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.prof,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // Quantity Controls
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Quantity',
-                            style: AppTypography.caption.copyWith(
-                              fontSize: 10,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          GestureDetector(
-                            onTap: _isUpdating
-                                ? null
-                                : () => _showQuantityDialog(
-                                    productId,
-                                    productName,
-                                    quantity,
-                                  ),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: AppColors.textHint.withOpacity(0.3),
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // Decrease button
-                                  IconButton(
-                                    icon: const Icon(Icons.remove, size: 16),
-                                    onPressed: _isUpdating
-                                        ? null
-                                        : () => _updateQuantity(
-                                            productId,
-                                            'decrease',
-                                          ),
-                                    constraints: const BoxConstraints(
-                                      minWidth: 28,
-                                      minHeight: 28,
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                  SizedBox(
-                                    width: 30,
-                                    child: Text(
-                                      quantity.toString(),
-                                      textAlign: TextAlign.center,
-                                      style: AppTypography.body.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  // Increase button
-                                  IconButton(
-                                    icon: const Icon(Icons.add, size: 16),
-                                    onPressed: _isUpdating
-                                        ? null
-                                        : () => _updateQuantity(
-                                            productId,
-                                            'increase',
-                                          ),
-                                    constraints: const BoxConstraints(
-                                      minWidth: 28,
-                                      minHeight: 28,
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // Total
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'Total',
-                            style: AppTypography.caption.copyWith(
-                              fontSize: 10,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          Text(
-                            '₦${total.toStringAsFixed(0)}',
-                            style: AppTypography.title.copyWith(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.accent,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-
-                  // Remove button - Using the reusable RemoveFromCartButton widget
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: RemoveFromCartButton(
-                      productId: productId,
-                      productName: productName,
-                      size: 14,
-                      onRemoved: () {
-                        _loadCart();
-                      },
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildCheckoutSection(bool isMobile) {
-    return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : 24),
-      decoration: BoxDecoration(
-        color: AppColors.text,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Total Items:',
-                  style: AppTypography.body.copyWith(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                Text(
-                  '$_totalItems item${_totalItems > 1 ? 's' : ''}',
-                  style: AppTypography.body.copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Total Amount:',
-                  style: AppTypography.body.copyWith(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  '₦${_totalPrice.toStringAsFixed(0)}',
-                  style: AppTypography.title.copyWith(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.accent,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isUpdating ? null : _navigateToCheckout,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.prof,
-                  foregroundColor: AppColors.text,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: _isUpdating
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.text,
-                        ),
-                      )
-                    : const Text(
-                        'Proceed to Checkout',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+              const SizedBox(height: 10),
+              const Divider(height: 1),
+              const SizedBox(height: 10),
+
+              // Price | Stepper | Total
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Unit price
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Price',
+                        style: AppTypography.caption.copyWith(
+                          fontSize: 10,
+                          color: AppColors.textSecondary,
                         ),
                       ),
+                      Text(
+                        '₦${price.toStringAsFixed(0)}',
+                        style: AppTypography.body.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.prof,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Stepper
+                  GestureDetector(
+                    onTap: _isUpdating
+                        ? null
+                        : () => _showQuantityDialog(
+                            productId,
+                            productName,
+                            quantity,
+                          ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: AppColors.textHint.withOpacity(0.3),
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove, size: 16),
+                            onPressed: _isUpdating
+                                ? null
+                                : () => _updateQuantity(productId, 'decrease'),
+                            constraints: const BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 32,
+                            ),
+                            padding: EdgeInsets.zero,
+                          ),
+                          SizedBox(
+                            width: 28,
+                            child: Text(
+                              quantity.toString(),
+                              textAlign: TextAlign.center,
+                              style: AppTypography.body.copyWith(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.add, size: 16),
+                            onPressed: _isUpdating
+                                ? null
+                                : () => _updateQuantity(productId, 'increase'),
+                            constraints: const BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 32,
+                            ),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Total
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Total',
+                        style: AppTypography.caption.copyWith(
+                          fontSize: 10,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      Text(
+                        '₦${total.toStringAsFixed(0)}',
+                        style: AppTypography.title.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.accent,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

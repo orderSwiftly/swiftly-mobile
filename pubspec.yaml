@@ -40,6 +40,7 @@ dependencies:
   shared_preferences: ^2.2.2
   country_code_picker: ^3.0.0  # For country code selection in phone number input
   pin_code_fields: ^8.0.1 # For OTP input fields
+  webview_flutter: ^4.13.1
 
 dev_dependencies:
   flutter_test:

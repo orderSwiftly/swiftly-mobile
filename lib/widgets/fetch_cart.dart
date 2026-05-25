@@ -4,6 +4,7 @@ import '../services/cart_service.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import 'remove_from_cart.dart';
+import '../screens/checkout_screen.dart'; // Add this import
 
 class FetchCart extends StatefulWidget {
   final Function(int)? onCartItemCountChanged;
@@ -27,6 +28,7 @@ class _FetchCartState extends State<FetchCart> {
   bool _isLoading = true;
   bool _isUpdating = false;
   int _totalItems = 0;
+  String? _storeZoneId; // Add this to store zone_id from cart
 
   @override
   void initState() {
@@ -44,9 +46,16 @@ class _FetchCartState extends State<FetchCart> {
       itemCount += item['quantity'] as int? ?? 0;
     }
 
+    // Extract zone_id from first item if available
+    String? zoneId;
+    if (items.isNotEmpty) {
+      zoneId = items.first['zone_id']?.toString();
+    }
+
     setState(() {
       _cartItems = items;
       _totalItems = itemCount;
+      _storeZoneId = zoneId;
       _isLoading = false;
     });
 
@@ -183,18 +192,21 @@ class _FetchCartState extends State<FetchCart> {
     );
   }
 
-  void _navigateToCheckout(
-    String zoneName,
-    List<Map<String, dynamic>> zoneItems,
-  ) {
-    Navigator.pushNamed(
+  void _navigateToCheckout() {
+    // Get store_zone_id from any cart item
+    if (_storeZoneId == null || _storeZoneId!.isEmpty) {
+      _showSnackBar(
+        'Unable to proceed to checkout. Store zone ID missing.',
+        Colors.red,
+      );
+      return;
+    }
+
+    Navigator.push(
       context,
-      '/checkout',
-      arguments: {
-        'zone_name': zoneName,
-        'items': zoneItems,
-        'total': _zoneTotal(zoneItems),
-      },
+      MaterialPageRoute(
+        builder: (context) => CheckoutScreen(store_zone_id: _storeZoneId!),
+      ),
     );
   }
 
@@ -437,9 +449,7 @@ class _FetchCartState extends State<FetchCart> {
                     ],
                   ),
                   ElevatedButton(
-                    onPressed: _isUpdating
-                        ? null
-                        : () => _navigateToCheckout(zoneName, zoneItems),
+                    onPressed: _isUpdating ? null : _navigateToCheckout,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.prof,
                       foregroundColor: AppColors.text,
@@ -452,7 +462,7 @@ class _FetchCartState extends State<FetchCart> {
                       ),
                     ),
                     child: const Text(
-                      'Checkout Zone',
+                      'Checkout',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,

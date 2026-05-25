@@ -195,7 +195,7 @@ class ApiService {
         // Save the token if found
         if (token != null && token.isNotEmpty) {
           await saveToken(token);
-          print('Token saved successfully from headers');
+          print('Token saved successfully from headers: $token');
         } else {
           print('WARNING: No token found in response headers');
           // Fallback: check if token is in response body

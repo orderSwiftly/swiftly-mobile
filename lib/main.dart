@@ -12,7 +12,7 @@ import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/dashboard_screen.dart';
+import 'screens/main_wrapper.dart'; // Import MainWrapper instead of DashboardScreen
 import 'core/theme/app_colors.dart';
 
 void main() async {
@@ -81,7 +81,8 @@ class _MyAppState extends ConsumerState<MyApp> {
             const VerifyEmailScreen(email: '', phone: ''),
         '/verify-otp': (context) => const VerifyOtpScreen(email: ''),
         '/forgot-password': (context) => const ForgotPasswordScreen(),
-        '/dashboard': (context) => const DashboardScreen(), // Add this
+        '/dashboard': (context) =>
+            const MainWrapper(), // Changed to MainWrapper
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/verify-otp') {
@@ -139,10 +140,10 @@ class _MyAppState extends ConsumerState<MyApp> {
         return const LoginScreen();
       },
       data: (state) {
-        // CASE 1: User is authenticated - go to dashboard
+        // CASE 1: User is authenticated - go to dashboard wrapper
         if (state.status == AuthStatus.authenticated && state.user != null) {
-          print('User is authenticated, showing dashboard');
-          return const DashboardScreen();
+          print('User is authenticated, showing MainWrapper');
+          return const MainWrapper(); // Changed to MainWrapper
         }
 
         // CASE 2: User not authenticated

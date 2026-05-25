@@ -1,3 +1,5 @@
+// top navigation bar with bell icon and avatar
+
 import 'package:flutter/material.dart';
 import '../services/profile_service.dart';
 import '../core/theme/app_colors.dart';

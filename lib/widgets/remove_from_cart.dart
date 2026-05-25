@@ -63,7 +63,7 @@ class _RemoveFromCartButtonState extends State<RemoveFromCartButton> {
 
     if (success) {
       if (widget.onRemoved != null) widget.onRemoved!();
-      _showSnackBar('${widget.productName} removed from cart', Colors.green);
+      _showSnackBar('${widget.productName} removed from cart', AppColors.prof);
     } else {
       _showSnackBar('Failed to remove item', Colors.red);
     }

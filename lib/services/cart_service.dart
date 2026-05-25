@@ -24,6 +24,11 @@ class CartService {
     };
   }
 
+  Future<Map<String, String>> _getAuthHeaders() async {
+    final token = await _getAuthToken();
+    return {'Authorization': 'Bearer $token'};
+  }
+
   Future<List<Map<String, dynamic>>> fetchCart() async {
     try {
       final headers = await _getHeaders();
@@ -124,33 +129,33 @@ class CartService {
   Future<bool> removeFromCart(String productId) async {
     // If a delete for this product is already in flight, skip it
     if (_pendingDeletes.contains(productId)) {
-      print('DELETE already in flight for $productId, skipping.');
+      // print('DELETE already in flight for $productId, skipping.');
       return false;
     }
 
     _pendingDeletes.add(productId);
 
     try {
-      final headers = await _getHeaders();
-      print('Headers being sent: $headers');
-      print('Attempting DELETE for product_id: "$productId"');
+      final headers = await _getAuthHeaders();
+      // print('Headers being sent: $headers');
+      // print('Attempting DELETE for product_id: "$productId"');
 
       final response = await http.delete(
         Uri.parse('$baseUrl/v2/cart/$productId'),
         headers: headers,
       );
 
-      print('Remove from cart response status: ${response.statusCode}');
-      print('Remove from cart response body: ${response.body}');
+      // print('Remove from cart response status: ${response.statusCode}');
+      // print('Remove from cart response body: ${response.body}');
 
       if (response.statusCode == 200) {
         return true;
       } else {
-        print('Failed to remove from cart: ${response.statusCode}');
+        // print('Failed to remove from cart: ${response.statusCode}');
         return false;
       }
     } catch (e) {
-      print('Error removing from cart: $e');
+      // print('Error removing from cart: $e');
       return false;
     } finally {
       _pendingDeletes.remove(productId);

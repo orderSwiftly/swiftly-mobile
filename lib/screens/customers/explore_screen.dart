@@ -70,16 +70,15 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       final storeName =
           (product['store'] as Map?)?['name']?.toString().toLowerCase() ?? '';
       final query = _searchQuery.toLowerCase();
-
       return name.contains(query) ||
           category.contains(query) ||
           storeName.contains(query);
     }).toList();
 
     if (_selectedCategory != 'All') {
-      filtered = filtered.where((product) {
-        return product['category'] == _selectedCategory;
-      }).toList();
+      filtered = filtered
+          .where((product) => product['category'] == _selectedCategory)
+          .toList();
     }
 
     return filtered;
@@ -87,19 +86,20 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width < 600;
+    // ── DESKTOP ADAPTATION START ──
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isMobile = screenWidth < 600;
+    final bool isDesktop = screenWidth >= 800;
+    // ── DESKTOP ADAPTATION END ──
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // Header with Search Bar
-          _buildHeader(isMobile),
+          _buildHeader(isMobile, isDesktop),
 
-          // Category Filter
-          if (_categories.length > 1) _buildCategoryFilter(isMobile),
+          if (_categories.length > 1) _buildCategoryFilter(isMobile, isDesktop),
 
-          // Content
           Expanded(
             child: _isLoading
                 ? const Center(
@@ -109,18 +109,24 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 ? _buildErrorView()
                 : _filteredProducts.isEmpty
                 ? _buildEmptyView()
-                : _buildProductsGrid(isMobile),
+                // ── DESKTOP ADAPTATION START ──
+                // Pass isDesktop so the grid knows how many columns to use
+                : _buildProductsGrid(isMobile, isDesktop),
+            // ── DESKTOP ADAPTATION END ──
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(bool isMobile) {
+  Widget _buildHeader(bool isMobile, bool isDesktop) {
     return Container(
       color: AppColors.text,
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 24,
+        // ── DESKTOP ADAPTATION START ──
+        // More horizontal breathing room on desktop
+        horizontal: isDesktop ? 32 : (isMobile ? 16 : 24),
+        // ── DESKTOP ADAPTATION END ──
         vertical: 16,
       ),
       child: SafeArea(
@@ -128,16 +134,17 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title
             Text(
               'Explore Products',
               style: AppTypography.headline.copyWith(
-                fontSize: isMobile ? 24 : 28,
+                // ── DESKTOP ADAPTATION START ──
+                // Slightly larger title on desktop
+                fontSize: isDesktop ? 30 : (isMobile ? 24 : 28),
+                // ── DESKTOP ADAPTATION END ──
                 color: AppColors.primary,
               ),
             ),
             const SizedBox(height: 8),
-            // Subtitle
             Text(
               'Discover amazing products at Babcock University',
               style: AppTypography.body.copyWith(
@@ -145,13 +152,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            // Search Bar
             CustomSearchBar(
               hintText: 'Search by name, category, or store...',
               onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
+                setState(() => _searchQuery = value);
               },
             ),
           ],
@@ -160,13 +164,17 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     );
   }
 
-  Widget _buildCategoryFilter(bool isMobile) {
+  Widget _buildCategoryFilter(bool isMobile, bool isDesktop) {
     return Container(
       color: AppColors.text,
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24),
+        // ── DESKTOP ADAPTATION START ──
+        padding: EdgeInsets.symmetric(
+          horizontal: isDesktop ? 32 : (isMobile ? 16 : 24),
+        ),
+        // ── DESKTOP ADAPTATION END ──
         child: Row(
           children: _categories.map((category) {
             final isSelected = _selectedCategory == category;
@@ -176,9 +184,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 label: Text(category),
                 selected: isSelected,
                 onSelected: (selected) {
-                  setState(() {
-                    _selectedCategory = category;
-                  });
+                  setState(() => _selectedCategory = category);
                 },
                 backgroundColor: AppColors.primary,
                 selectedColor: AppColors.accent,
@@ -195,12 +201,19 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     );
   }
 
-  Widget _buildProductsGrid(bool isMobile) {
-    final crossAxisCount = isMobile ? 2 : 4;
-    final childAspectRatio = isMobile ? 0.7 : 0.75;
+  Widget _buildProductsGrid(bool isMobile, bool isDesktop) {
+    // ── DESKTOP ADAPTATION START ──
+    // Scale columns with screen width:
+    // mobile = 2, tablet = 3, desktop = 4
+    final int crossAxisCount = isDesktop ? 4 : (isMobile ? 2 : 3);
+    // Slightly taller cards on desktop to prevent text clipping
+    final double childAspectRatio = isDesktop ? 0.72 : (isMobile ? 0.70 : 0.75);
+    // Extra padding on desktop so grid doesn't stretch wall-to-wall
+    final double horizontalPadding = isDesktop ? 32 : 16;
+    // ── DESKTOP ADAPTATION END ──
 
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(horizontalPadding),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
         childAspectRatio: childAspectRatio,
@@ -212,7 +225,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
         final product = _filteredProducts[index];
         final store = product['store'] as Map<String, dynamic>?;
 
-        // In _buildProductsGrid method, update the ProductCard usage:
         return ProductCard(
           id: product['id'],
           name: product['name'] ?? 'Product Name',

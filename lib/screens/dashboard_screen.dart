@@ -34,9 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<List<Map<String, dynamic>>> _loadFilteredProducts() async {
     try {
       final allProducts = await _loadProducts();
-      if (_selectedCategory == 'All') {
-        return allProducts;
-      }
+      if (_selectedCategory == 'All') return allProducts;
       return allProducts.where((product) {
         final productCategory = product['category'] ?? '';
         return productCategory.toLowerCase() == _selectedCategory.toLowerCase();
@@ -49,22 +47,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width < 600;
+    // ── DESKTOP ADAPTATION START ──
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isMobile = screenWidth < 600;
+    final bool isDesktop = screenWidth >= 800;
+    // ── DESKTOP ADAPTATION END ──
 
     return Scaffold(
       backgroundColor: AppColors.text,
       body: Column(
         children: [
-          _DashboardHeader(isMobile: isMobile),
+          _DashboardHeader(isMobile: isMobile, isDesktop: isDesktop),
           const SizedBox(height: 16),
 
-          // Search Bar - Navigate to explore screen when tapped
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(context, '/explore');
-              },
+              onTap: () => Navigator.pushNamed(context, '/explore'),
               child: const CustomSearchBar(
                 showFilterButton: true,
                 hintText: 'Search products...',
@@ -74,18 +73,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           const SizedBox(height: 16),
 
-          // Categories Section - Using ListCategories widget
           ListCategories(
             onCategorySelected: (category) {
-              setState(() {
-                _selectedCategory = category;
-              });
+              setState(() => _selectedCategory = category);
             },
           ),
 
           const SizedBox(height: 8),
 
-          // Products Preview - Use Flexible to prevent overflow
           Flexible(
             child: FutureBuilder(
               future: _loadFilteredProducts(),
@@ -123,24 +118,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 }
 
                 final products = snapshot.data!;
-                // REMOVED THE .take(4) - NOW SHOWING ALL PRODUCTS
-                final crossAxisCount = isMobile ? 2 : 4;
+
+                // ── DESKTOP ADAPTATION START ──
+                // More columns on wider screens: mobile=2, tablet=3, desktop=4
+                final int crossAxisCount = isDesktop ? 4 : (isMobile ? 2 : 3);
+                // ── DESKTOP ADAPTATION END ──
 
                 return GridView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  // ── DESKTOP ADAPTATION START ──
+                  // Extra padding on desktop so grid breathes inside the content area
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDesktop ? 24 : 16,
+                  ),
+                  // ── DESKTOP ADAPTATION END ──
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: crossAxisCount,
                     childAspectRatio: 0.65,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                   ),
-                  itemCount: products.length, // NOW USING FULL PRODUCTS LIST
+                  itemCount: products.length,
                   shrinkWrap: true,
                   physics: const BouncingScrollPhysics(),
                   itemBuilder: (context, index) {
                     final product = products[index];
                     final store = product['store'] as Map<String, dynamic>?;
-
                     return ProductCard(
                       id: product['id'],
                       name: product['name'] ?? 'Product Name',
@@ -176,8 +178,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 class _DashboardHeader extends StatelessWidget {
   final bool isMobile;
+  final bool isDesktop;
 
-  const _DashboardHeader({required this.isMobile});
+  const _DashboardHeader({required this.isMobile, required this.isDesktop});
 
   @override
   Widget build(BuildContext context) {
@@ -191,9 +194,13 @@ class _DashboardHeader extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // ── DESKTOP ADAPTATION START ──
+              // On desktop the sidebar already shows the app logo (swiftly-txt.png).
+              // The babcock.png here is the UNIVERSITY logo — a different asset —
+              // so we keep showing it on all screen sizes.
               Container(
-                width: isMobile ? 42 : 50,
-                height: isMobile ? 42 : 50,
+                width: isDesktop ? 50 : (isMobile ? 42 : 46),
+                height: isDesktop ? 50 : (isMobile ? 42 : 46),
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.text,
@@ -210,13 +217,16 @@ class _DashboardHeader extends StatelessWidget {
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.bold,
-                          fontSize: isMobile ? 20 : 24,
+                          fontSize: isDesktop ? 24 : (isMobile ? 20 : 22),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
+              // ── DESKTOP ADAPTATION END ──
+
+              // Mobile: centred "Home" title
               if (isMobile)
                 const Expanded(
                   child: Center(
@@ -230,8 +240,26 @@ class _DashboardHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (!isMobile) const Spacer(),
+
+              // ── DESKTOP ADAPTATION START ──
+              // Desktop: "Home" title left-aligned after the logo + bell on right
+              if (isDesktop) ...[
+                const SizedBox(width: 12),
+                const Text(
+                  'Home',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const Spacer(),
+                const AppNavBar(),
+              ],
+
+              // ── DESKTOP ADAPTATION END ──
               if (isMobile) const AppNavBar(),
+              if (!isMobile && !isDesktop) const Spacer(),
             ],
           ),
         ),

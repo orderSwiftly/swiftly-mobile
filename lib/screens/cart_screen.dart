@@ -8,7 +8,12 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ── DESKTOP ADAPTATION START ──
+    final bool isDesktop = MediaQuery.of(context).size.width >= 800;
+    // ── DESKTOP ADAPTATION END ──
+
     return Scaffold(
+      // ── FIX: explicit white background prevents black screen when navigating back
       backgroundColor: AppColors.text,
       appBar: AppBar(
         title: const Text(
@@ -19,12 +24,25 @@ class CartScreen extends StatelessWidget {
         elevation: 0,
         foregroundColor: AppColors.text,
         centerTitle: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        // ── FIX: Only show back button when actually pushed on top of another route.
+        // When rendered inside MainWrapper as a tab, automaticallyImplyLeading
+        // handles this — no manual leading needed.
+        automaticallyImplyLeading: true,
       ),
-      body: const FetchCart(showHeader: false, showCheckoutButton: true),
+      // ── DESKTOP ADAPTATION START ──
+      // Center and cap cart content width on desktop
+      body: isDesktop
+          ? Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 680),
+                child: const FetchCart(
+                  showHeader: false,
+                  showCheckoutButton: true,
+                ),
+              ),
+            )
+          : const FetchCart(showHeader: false, showCheckoutButton: true),
+      // ── DESKTOP ADAPTATION END ──
     );
   }
 }

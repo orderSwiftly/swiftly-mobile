@@ -47,9 +47,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (_profile == null) return 'User';
     final firstName = _profile?['first_name'] ?? '';
     final lastName = _profile?['last_name'] ?? '';
-    if (firstName.isNotEmpty && lastName.isNotEmpty) {
+    if (firstName.isNotEmpty && lastName.isNotEmpty)
       return '$firstName $lastName';
-    }
     if (firstName.isNotEmpty) return firstName;
     if (lastName.isNotEmpty) return lastName;
     return 'User';
@@ -58,7 +57,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String getUserInitials() {
     final firstName = _profile?['first_name'] ?? '';
     final lastName = _profile?['last_name'] ?? '';
-
     if (firstName.isNotEmpty && lastName.isNotEmpty) {
       return '${firstName[0]}${lastName[0]}'.toUpperCase();
     }
@@ -67,13 +65,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return 'U';
   }
 
-  String? getAvatarUrl() {
-    return _profile?['picture_url'];
-  }
+  String? getAvatarUrl() => _profile?['picture_url'];
 
   @override
   Widget build(BuildContext context) {
+    // ── DESKTOP ADAPTATION START ──
     final bool isMobile = MediaQuery.of(context).size.width < 600;
+    final bool isDesktop = MediaQuery.of(context).size.width >= 800;
+    // ── DESKTOP ADAPTATION END ──
 
     return Scaffold(
       backgroundColor: AppColors.text,
@@ -83,7 +82,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             )
           : Column(
               children: [
-                // Top Navigation Bar with Bell and Avatar
+                // Top nav bar
                 Container(
                   color: AppColors.text,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -92,7 +91,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Back button
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
                           child: const Icon(
@@ -109,95 +107,96 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             color: AppColors.primary,
                           ),
                         ),
-                        const AppNavBar(), // Bell icon and avatar
+                        const AppNavBar(),
                       ],
                     ),
                   ),
                 ),
 
-                // Profile Content
                 Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      // Profile Header
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Profile',
-                            textAlign: TextAlign.center,
-                            style: AppTypography.headline.copyWith(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            getUserName(),
-                            style: AppTypography.title.copyWith(
-                              fontSize: 16,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Babcock University (Main)',
-                            style: AppTypography.body.copyWith(
-                              color: AppColors.primary,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
+                  // ── DESKTOP ADAPTATION START ──
+                  // Desktop: two-column layout inside a centered max-width container
+                  // Left = avatar + name card, Right = menu items
+                  // Mobile: original single-column list layout
+                  child: isDesktop
+                      ? _buildDesktopLayout()
+                      : _buildMobileLayout(isMobile),
+                  // ── DESKTOP ADAPTATION END ──
+                ),
+              ],
+            ),
+    );
+  }
 
-                      const SizedBox(height: 24),
-
-                      // Actions Section
-                      Text(
-                        'Actions',
-                        style: AppTypography.title.copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+  // ── DESKTOP ADAPTATION START ──
+  // Desktop two-column profile layout
+  Widget _buildDesktopLayout() {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 900),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left column — avatar card
+              SizedBox(
+                width: 260,
+                child: Card(
+                  color: AppColors.text,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: AppColors.secondary.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Avatar circle
+                        CircleAvatar(
+                          radius: 48,
+                          backgroundColor: AppColors.accent.withOpacity(0.15),
+                          backgroundImage: getAvatarUrl() != null
+                              ? NetworkImage(getAvatarUrl()!)
+                              : null,
+                          child: getAvatarUrl() == null
+                              ? Text(
+                                  getUserInitials(),
+                                  style: TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.accent,
+                                  ),
+                                )
+                              : null,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildMenuItem(title: 'My Account', onTap: () {}),
-                      _buildMenuItem(title: 'My Orders', onTap: () {}),
-                      _buildMenuItem(title: 'My Addresses', onTap: () {}),
-
-                      const SizedBox(height: 24),
-
-                      // Preferences Section
-                      Text(
-                        'Preferences',
-                        style: AppTypography.title.copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+                        const SizedBox(height: 16),
+                        Text(
+                          getUserName(),
+                          style: AppTypography.title.copyWith(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildSwitchMenuItem(
-                        title: 'Push Notifications',
-                        value: _notificationsEnabled,
-                        onChanged: (value) {
-                          setState(() {
-                            _notificationsEnabled = value;
-                          });
-                        },
-                      ),
-                      _buildMenuItem(title: 'Contact support', onTap: () {}),
-
-                      const SizedBox(height: 32),
-
-                      // Logout Button (only for mobile, desktop has it in sidebar)
-                      if (isMobile)
+                        const SizedBox(height: 4),
+                        Text(
+                          'Babcock University (Main)',
+                          style: AppTypography.body.copyWith(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        // Logout button in the left card on desktop
                         SizedBox(
                           width: double.infinity,
-                          child: TextButton(
+                          child: OutlinedButton.icon(
                             onPressed: () async {
                               final authProviderNotifier = ref.read(
                                 authProvider.notifier,
@@ -210,19 +209,172 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 );
                               }
                             },
-                            child: Text(
+                            icon: const Icon(
+                              Icons.logout,
+                              size: 18,
+                              color: AppColors.textError,
+                            ),
+                            label: Text(
                               'Logout',
                               style: AppTypography.button.copyWith(
                                 color: AppColors.textError,
                               ),
                             ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: AppColors.textError.withOpacity(0.4),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ],
+              ),
+
+              const SizedBox(width: 32),
+
+              // Right column — menu items
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Actions',
+                      style: AppTypography.title.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildMenuItem(title: 'My Account', onTap: () {}),
+                    _buildMenuItem(title: 'My Orders', onTap: () {}),
+                    _buildMenuItem(title: 'My Addresses', onTap: () {}),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Preferences',
+                      style: AppTypography.title.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildSwitchMenuItem(
+                      title: 'Push Notifications',
+                      value: _notificationsEnabled,
+                      onChanged: (value) {
+                        setState(() {
+                          _notificationsEnabled = value;
+                        });
+                      },
+                    ),
+                    _buildMenuItem(title: 'Contact support', onTap: () {}),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  // ── DESKTOP ADAPTATION END ──
+
+  // Original mobile layout — unchanged
+  Widget _buildMobileLayout(bool isMobile) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Profile',
+              textAlign: TextAlign.center,
+              style: AppTypography.headline.copyWith(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              getUserName(),
+              style: AppTypography.title.copyWith(
+                fontSize: 16,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Babcock University (Main)',
+              style: AppTypography.body.copyWith(
+                color: AppColors.primary,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Actions',
+          style: AppTypography.title.copyWith(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildMenuItem(title: 'My Account', onTap: () {}),
+        _buildMenuItem(title: 'My Orders', onTap: () {}),
+        _buildMenuItem(title: 'My Addresses', onTap: () {}),
+        const SizedBox(height: 24),
+        Text(
+          'Preferences',
+          style: AppTypography.title.copyWith(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildSwitchMenuItem(
+          title: 'Push Notifications',
+          value: _notificationsEnabled,
+          onChanged: (value) {
+            setState(() {
+              _notificationsEnabled = value;
+            });
+          },
+        ),
+        _buildMenuItem(title: 'Contact support', onTap: () {}),
+        const SizedBox(height: 32),
+        if (isMobile)
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () async {
+                final authProviderNotifier = ref.read(authProvider.notifier);
+                await authProviderNotifier.logout();
+                if (context.mounted) {
+                  Navigator.pushReplacementNamed(context, '/login');
+                }
+              },
+              child: Text(
+                'Logout',
+                style: AppTypography.button.copyWith(
+                  color: AppColors.textError,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 

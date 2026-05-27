@@ -8,17 +8,45 @@ class OrdersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ── DESKTOP ADAPTATION START ──
+    // On desktop, cap the empty state content width so it
+    // doesn't look lost in the middle of a wide screen
+    final bool isDesktop = MediaQuery.of(context).size.width >= 800;
+    // ── DESKTOP ADAPTATION END ──
+
     return Scaffold(
       backgroundColor: AppColors.text,
+      // ── DESKTOP ADAPTATION START ──
+      // Desktop: add a page title header above the empty state
+      // so the screen doesn't feel like a blank page
+      appBar: isDesktop
+          ? AppBar(
+              backgroundColor: AppColors.text,
+              elevation: 0,
+              automaticallyImplyLeading: false,
+              title: const Text(
+                'My Orders',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            )
+          : null,
+      // ── DESKTOP ADAPTATION END ──
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // ── DESKTOP ADAPTATION START ──
+            // Slightly larger icon on desktop for better visual balance
             Icon(
               Icons.receipt_outlined,
-              size: 80,
+              size: isDesktop ? 96 : 80,
               color: AppColors.textSecondary,
             ),
+            // ── DESKTOP ADAPTATION END ──
             const SizedBox(height: 16),
             Text(
               'No Orders Yet',

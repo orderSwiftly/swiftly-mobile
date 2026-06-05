@@ -1,3 +1,5 @@
+// screens/customers/checkout_summary_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:swiftly_mobile/core/theme/app_colors.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -58,7 +60,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => PaymentWebView(
-              payment_url: response.payment_url,
+              payment_link: response.payment_link,
               order_id: response.order_id,
             ),
           ),
@@ -552,10 +554,10 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
 
 // Payment WebView — no layout changes needed, it's a full-screen webview
 class PaymentWebView extends StatefulWidget {
-  final String payment_url;
+  final String payment_link;
   final String? order_id;
 
-  const PaymentWebView({Key? key, required this.payment_url, this.order_id})
+  const PaymentWebView({Key? key, required this.payment_link, this.order_id})
     : super(key: key);
 
   @override
@@ -586,7 +588,7 @@ class _PaymentWebViewState extends State<PaymentWebView> {
           },
         ),
       )
-      ..loadRequest(Uri.parse(widget.payment_url));
+      ..loadRequest(Uri.parse(widget.payment_link));
   }
 
   void _handlePaymentSuccess() {

@@ -56,14 +56,14 @@ class CheckoutSummaryResponse {
 }
 
 class CheckoutResponse {
-  final String payment_url;
+  final String payment_link;
   final String? order_id;
 
-  CheckoutResponse({required this.payment_url, this.order_id});
+  CheckoutResponse({required this.payment_link, this.order_id});
 
   factory CheckoutResponse.fromJson(Map<String, dynamic> json) {
     return CheckoutResponse(
-      payment_url: json['payment_url'],
+      payment_link: json['payment_link'],
       order_id: json['order_id'],
     );
   }

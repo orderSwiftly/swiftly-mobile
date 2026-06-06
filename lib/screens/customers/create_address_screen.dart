@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:swiftly_mobile/core/theme/app_colors.dart';
 
-class CreateAddressScreen extends StatefulWidget {
+class CreateLandmarkScreen extends StatefulWidget {
+  // Changed class name
   final String store_zone_id;
 
-  const CreateAddressScreen({super.key, required this.store_zone_id});
+  const CreateLandmarkScreen({
+    super.key,
+    required this.store_zone_id,
+  }); // Changed constructor name
 
   @override
-  State<CreateAddressScreen> createState() => _CreateAddressScreenState();
+  State<CreateLandmarkScreen> createState() => _CreateLandmarkScreenState(); // Changed state class
 }
 
-class _CreateAddressScreenState extends State<CreateAddressScreen> {
-  final TextEditingController _addressNameController = TextEditingController();
-  final TextEditingController _addressZoneController = TextEditingController();
+class _CreateLandmarkScreenState extends State<CreateLandmarkScreen> {
+  // Changed class name
+  final TextEditingController _landmarkNameController =
+      TextEditingController(); // Changed controller name
+  final TextEditingController _landmarkZoneController =
+      TextEditingController(); // Changed controller name
   bool _isLoading = false;
 
   @override
@@ -25,7 +32,7 @@ class _CreateAddressScreenState extends State<CreateAddressScreen> {
     return Scaffold(
       backgroundColor: AppColors.text,
       appBar: AppBar(
-        title: const Text('Add New Address'),
+        title: const Text('Add New Landmark'), // Changed text
         backgroundColor: AppColors.prof,
         foregroundColor: AppColors.text,
       ),
@@ -41,12 +48,12 @@ class _CreateAddressScreenState extends State<CreateAddressScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Address Name',
+                  'Landmark Name', // Changed text
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 8),
                 TextField(
-                  controller: _addressNameController,
+                  controller: _landmarkNameController, // Changed controller
                   decoration: InputDecoration(
                     hintText: 'e.g., Bethel, Samuel Akande, Queen Esther',
                     border: OutlineInputBorder(
@@ -57,7 +64,7 @@ class _CreateAddressScreenState extends State<CreateAddressScreen> {
                 const SizedBox(height: 16),
 
                 const Text(
-                  'Zone',
+                  'Zone', // This stays the same
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 8),
@@ -82,7 +89,8 @@ class _CreateAddressScreenState extends State<CreateAddressScreen> {
                     ),
                   ],
                   onChanged: (value) {
-                    _addressZoneController.text = value ?? '';
+                    _landmarkZoneController.text =
+                        value ?? ''; // Changed controller
                   },
                   hint: const Text('Select zone'),
                 ),
@@ -91,7 +99,9 @@ class _CreateAddressScreenState extends State<CreateAddressScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _createAddress,
+                    onPressed: _isLoading
+                        ? null
+                        : _createLandmark, // Changed method name
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.prof,
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -111,7 +121,7 @@ class _CreateAddressScreenState extends State<CreateAddressScreen> {
                             ),
                           )
                         : const Text(
-                            'Save Address',
+                            'Save Landmark', // Changed text
                             style: TextStyle(
                               fontSize: 16,
                               color: AppColors.text,
@@ -127,15 +137,20 @@ class _CreateAddressScreenState extends State<CreateAddressScreen> {
     );
   }
 
-  Future<void> _createAddress() async {
-    if (_addressNameController.text.isEmpty) {
+  Future<void> _createLandmark() async {
+    // Changed method name
+    if (_landmarkNameController.text.isEmpty) {
+      // Changed controller
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter address name')),
+        const SnackBar(
+          content: Text('Please enter landmark name'),
+        ), // Changed text
       );
       return;
     }
 
-    if (_addressZoneController.text.isEmpty) {
+    if (_landmarkZoneController.text.isEmpty) {
+      // Changed controller
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Please select a zone')));
@@ -143,6 +158,24 @@ class _CreateAddressScreenState extends State<CreateAddressScreen> {
     }
 
     setState(() => _isLoading = true);
+
+    // TODO: Replace this with actual API call to create landmark
+    // Example:
+    // try {
+    //   await _checkoutService.createLandmark(
+    //     widget.store_zone_id,
+    //     _landmarkNameController.text,
+    //     _landmarkZoneController.text,
+    //   );
+    //   Navigator.pop(context, true);
+    // } catch (e) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text('Error creating landmark: $e')),
+    //   );
+    // } finally {
+    //   setState(() => _isLoading = false);
+    // }
+
     await Future.delayed(const Duration(seconds: 1));
     setState(() => _isLoading = false);
     Navigator.pop(context, true);
@@ -150,8 +183,8 @@ class _CreateAddressScreenState extends State<CreateAddressScreen> {
 
   @override
   void dispose() {
-    _addressNameController.dispose();
-    _addressZoneController.dispose();
+    _landmarkNameController.dispose(); // Changed controller
+    _landmarkZoneController.dispose(); // Changed controller
     super.dispose();
   }
 }

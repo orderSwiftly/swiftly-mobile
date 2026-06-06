@@ -1,11 +1,9 @@
 // screens/checkout_screen.dart
 
-// screens/checkout_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:swiftly_mobile/core/theme/app_colors.dart';
 import '../services/checkout_service.dart';
-import '../models/address.dart';
+import '../models/landmark.dart';
 import '../models/checkout.dart';
 import './customers/create_address_screen.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -21,9 +19,9 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final CheckoutService _checkoutService = CheckoutService();
-  List<Address> _addresses = [];
+  List<Landmark> _landmarks = []; // Changed from _addresses
   bool _isLoading = true;
-  Address? _selectedAddress;
+  Landmark? _selectedLandmark; // Changed from _selectedAddress
   String? _details;
   final TextEditingController _detailsController = TextEditingController();
 
@@ -35,20 +33,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   void initState() {
     super.initState();
-    _loadAddresses();
+    _loadLandmarks(); // Changed from _loadAddresses
   }
 
-  Future<void> _loadAddresses() async {
+  Future<void> _loadLandmarks() async {
+    // Changed method name
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final response = await _checkoutService.listAddresses(
+      final response = await _checkoutService.listLandmarks(
+        // Changed method call
         widget.store_zone_id,
       );
       setState(() {
-        _addresses = response.addresses;
+        _landmarks = response.landmarks; // Note: Your model still uses 'landmarks' key internally
         _isLoading = false;
       });
     } catch (e) {
@@ -57,26 +57,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error loading addresses: $e')));
+      ).showSnackBar(SnackBar(content: Text('Error loading landmarks: $e')));
     }
   }
 
-  void _selectAddress(Address address) async {
+  void _selectLandmark(Landmark landmark) async {
+    // Changed from _selectAddress
     setState(() {
-      _selectedAddress = address;
+      _selectedLandmark = landmark;
       _summaryData = null; // Clear previous summary
       _isLoadingSummary = true;
     });
 
-    // Immediately fetch summary when address is selected
-    await _loadSummaryForAddress(address);
+    // Immediately fetch summary when landmark is selected
+    await _loadSummaryForLandmark(landmark); // Changed method call
   }
 
-  Future<void> _loadSummaryForAddress(Address address) async {
+  Future<void> _loadSummaryForLandmark(Landmark landmark) async {
+    // Changed parameter type
     try {
       final summary = await _checkoutService.getCheckoutSummary(
         widget.store_zone_id,
-        address.address_zone_id,
+        landmark.landmark_zone_id, // Changed from address.address_zone_id
       );
 
       if (mounted) {
@@ -98,9 +100,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _processCheckout() async {
-    if (_selectedAddress == null) {
+    if (_selectedLandmark == null) {
+      // Changed from _selectedAddress
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a delivery address')),
+        const SnackBar(
+          content: Text('Please select a delivery landmark'),
+        ), // Changed text
       );
       return;
     }
@@ -117,8 +122,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     try {
       final response = await _checkoutService.createCheckout(
         widget.store_zone_id,
-        _selectedAddress!.address_id,
-        _selectedAddress!.address_zone_id,
+        _selectedLandmark!.landmark_id, // Changed from address_id
+        _selectedLandmark!.landmark_zone_id, // Changed from address_zone_id
         _detailsController.text,
       );
 
@@ -179,10 +184,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left column — delivery address selection
-              Expanded(flex: 4, child: _buildAddressSection()),
+              // Left column — delivery landmark selection
+              Expanded(
+                flex: 4,
+                child: _buildLandmarkSection(),
+              ), // Changed method name
               const SizedBox(width: 32),
-              // Right column — order summary (shown when address selected)
+              // Right column — order summary (shown when landmark selected)
               Expanded(flex: 4, child: _buildSummarySection()),
             ],
           ),
@@ -191,7 +199,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildAddressSection() {
+  Widget _buildLandmarkSection() {
+    // Changed from _buildAddressSection
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -199,7 +208,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'Delivery Address',
+              'Delivery Landmark', // Changed text
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             TextButton.icon(
@@ -207,22 +216,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => CreateAddressScreen(
+                    builder: (context) => CreateLandmarkScreen(
                       store_zone_id: widget.store_zone_id,
                     ),
                   ),
                 );
                 if (result == true) {
-                  _loadAddresses();
+                  _loadLandmarks(); // Changed method call
                 }
               },
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('New Address'),
+              label: const Text('New Landmark'), // Changed text
             ),
           ],
         ),
         const SizedBox(height: 12),
-        if (_addresses.isEmpty)
+        if (_landmarks.isEmpty) // Changed from _addresses
           Card(
             child: Padding(
               padding: const EdgeInsets.all(32),
@@ -234,21 +243,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     color: AppColors.textSecondary,
                   ),
                   const SizedBox(height: 8),
-                  const Text('No addresses found'),
+                  const Text('No landmarks found'), // Changed text
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () async {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => CreateAddressScreen(
+                          builder: (context) => CreateLandmarkScreen(
                             store_zone_id: widget.store_zone_id,
                           ),
                         ),
                       );
-                      if (result == true) _loadAddresses();
+                      if (result == true)
+                        _loadLandmarks(); // Changed method call
                     },
-                    child: const Text('Add Address'),
+                    child: const Text('Add Landmark'), // Changed text
                   ),
                 ],
               ),
@@ -257,28 +267,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         else
           Expanded(
             child: ListView(
-              children: _addresses
-                  .map(
-                    (address) => Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: RadioListTile<Address>(
-                        value: address,
-                        groupValue: _selectedAddress,
-                        onChanged: (value) => _selectAddress(value!),
-                        title: Text(
-                          address.address_name,
-                          style: const TextStyle(fontWeight: FontWeight.w500),
+              children:
+                  _landmarks // Changed from _addresses
+                      .map(
+                        (landmark) => Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: RadioListTile<Landmark>(
+                            value: landmark,
+                            groupValue: _selectedLandmark,
+                            onChanged: (value) =>
+                                _selectLandmark(value!), // Changed method call
+                            title: Text(
+                              landmark
+                                  .landmark_name, // Changed from address_name
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            subtitle: Text(
+                              landmark.landmark_zone_name,
+                            ), // Changed from address_zone_name
+                            activeColor: AppColors.prof,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                          ),
                         ),
-                        subtitle: Text(address.address_zone_name),
-                        activeColor: AppColors.prof,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
+                      )
+                      .toList(),
             ),
           ),
         const SizedBox(height: 24),
@@ -306,7 +323,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildSummarySection() {
-    if (_selectedAddress == null) {
+    if (_selectedLandmark == null) {
+      // Changed from _selectedAddress
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -324,7 +342,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Select a delivery address to see your order total',
+                'Select a delivery landmark to see your order total', // Changed text
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.textSecondary),
               ),
@@ -363,7 +381,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               const Text('Failed to load order summary'),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => _loadSummaryForAddress(_selectedAddress!),
+                onPressed: () => _loadSummaryForLandmark(
+                  _selectedLandmark!,
+                ), // Changed method call
                 child: const Text('Retry'),
               ),
             ],
@@ -453,7 +473,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
             const SizedBox(height: 24),
 
-            // Delivery address info
+            // Delivery landmark info
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -469,7 +489,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _selectedAddress!.address_name,
+                    _selectedLandmark!
+                        .landmark_name, // Changed from address_name
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   if (_detailsController.text.isNotEmpty)
@@ -524,7 +545,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // Mobile layout with summary below address selection
+  // Mobile layout with summary below landmark selection
   Widget _buildMobileLayout() {
     return Column(
       children: [
@@ -534,12 +555,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Address selection section
+                // Landmark selection section
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Delivery Address',
+                      'Delivery Landmark', // Changed text
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -550,23 +571,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => CreateAddressScreen(
+                            builder: (context) => CreateLandmarkScreen(
                               store_zone_id: widget.store_zone_id,
                             ),
                           ),
                         );
                         if (result == true) {
-                          _loadAddresses();
+                          _loadLandmarks(); // Changed method call
                         }
                       },
                       icon: const Icon(Icons.add, size: 18),
-                      label: const Text('New Address'),
+                      label: const Text('New Landmark'), // Changed text
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
 
-                if (_addresses.isEmpty)
+                if (_landmarks.isEmpty) // Changed from _addresses
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(32),
@@ -578,39 +599,44 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             color: AppColors.textSecondary,
                           ),
                           const SizedBox(height: 8),
-                          const Text('No addresses found'),
+                          const Text('No landmarks found'), // Changed text
                           const SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: () async {
                               final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => CreateAddressScreen(
+                                  builder: (context) => CreateLandmarkScreen(
                                     store_zone_id: widget.store_zone_id,
                                   ),
                                 ),
                               );
-                              if (result == true) _loadAddresses();
+                              if (result == true)
+                                _loadLandmarks(); // Changed method call
                             },
-                            child: const Text('Add Address'),
+                            child: const Text('Add Landmark'), // Changed text
                           ),
                         ],
                       ),
                     ),
                   )
                 else
-                  ..._addresses.map(
-                    (address) => Card(
+                  ..._landmarks.map(
+                    // Changed from _addresses
+                    (landmark) => Card(
                       margin: const EdgeInsets.only(bottom: 12),
-                      child: RadioListTile<Address>(
-                        value: address,
-                        groupValue: _selectedAddress,
-                        onChanged: (value) => _selectAddress(value!),
+                      child: RadioListTile<Landmark>(
+                        value: landmark,
+                        groupValue: _selectedLandmark,
+                        onChanged: (value) =>
+                            _selectLandmark(value!), // Changed method call
                         title: Text(
-                          address.address_name,
+                          landmark.landmark_name, // Changed from address_name
                           style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
-                        subtitle: Text(address.address_zone_name),
+                        subtitle: Text(
+                          landmark.landmark_zone_name,
+                        ), // Changed from address_zone_name
                         activeColor: AppColors.prof,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -649,8 +675,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                 const SizedBox(height: 24),
 
-                // Order Summary Section (shown when address selected)
-                if (_selectedAddress != null) ...[
+                // Order Summary Section (shown when landmark selected)
+                if (_selectedLandmark != null) ...[
+                  // Changed from _selectedAddress
                   const Divider(),
                   const SizedBox(height: 16),
                   const Text(
@@ -739,7 +766,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed:
-                  (_selectedAddress != null &&
+                  (_selectedLandmark != null && // Changed from _selectedAddress
                       !_isLoadingSummary &&
                       !_isProcessing)
                   ? _processCheckout

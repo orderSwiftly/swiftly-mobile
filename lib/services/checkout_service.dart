@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../models/address.dart';
+import '../models/landmark.dart';
 import '../models/checkout.dart';
 
 class CheckoutService {
@@ -24,28 +24,30 @@ class CheckoutService {
     };
   }
 
-  Future<ListAddressesResponse> listAddresses(String store_zone_id) async {
+  // Changed: method name and endpoint
+  Future<ListLandmarksResponse> listLandmarks(String store_zone_id) async {
     final headers = await _getHeaders();
     final response = await http.get(
-      Uri.parse('$baseUrl/v2/addresses/$store_zone_id'),
+      Uri.parse('$baseUrl/v2/landmarks/$store_zone_id'), // Changed endpoint
       headers: headers,
     );
 
     if (response.statusCode == 200) {
-      return ListAddressesResponse.fromJson(json.decode(response.body));
+      return ListLandmarksResponse.fromJson(json.decode(response.body));
     } else {
-      throw Exception('Failed to load addresses: ${response.statusCode}');
+      throw Exception('Failed to load landmarks: ${response.statusCode}');
     }
   }
 
+  // Changed: parameter name from address_zone_id to landmark_zone_id
   Future<CheckoutSummaryResponse> getCheckoutSummary(
     String store_zone_id,
-    String address_zone_id,
+    String landmark_zone_id, // Changed parameter name
   ) async {
     final headers = await _getHeaders();
     final response = await http.get(
       Uri.parse(
-        '$baseUrl/v2/checkout/$store_zone_id/summary?address_zone_id=$address_zone_id',
+        '$baseUrl/v2/checkout/$store_zone_id/summary?landmark_zone_id=$landmark_zone_id', // Changed query param
       ),
       headers: headers,
     );
@@ -59,16 +61,17 @@ class CheckoutService {
     }
   }
 
+  // Changed: parameter names from address_* to landmark_*
   Future<CheckoutResponse> createCheckout(
     String store_zone_id,
-    String address_id,
-    String address_zone_id,
+    String landmark_id, // Changed from address_id
+    String landmark_zone_id, // Changed from address_zone_id
     String? details,
   ) async {
     final headers = await _getHeaders();
     final body = json.encode({
-      'address_id': address_id,
-      'address_zone_id': address_zone_id,
+      'landmark_id': landmark_id, // Changed key name
+      'landmark_zone_id': landmark_zone_id, // Changed key name
       'details': details ?? '',
     });
 

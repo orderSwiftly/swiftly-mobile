@@ -1,3 +1,5 @@
+// models/checkout.dart
+
 class CheckoutItem {
   final String id;
   final String name;
@@ -57,14 +59,37 @@ class CheckoutSummaryResponse {
 
 class CheckoutResponse {
   final String payment_link;
-  final String? order_id;
+  final String tx_reference; // Changed: added tx_reference, removed order_id
+  final String?
+  order_id; // Keep for backward compatibility, but will likely be removed
 
-  CheckoutResponse({required this.payment_link, this.order_id});
+  CheckoutResponse({
+    required this.payment_link,
+    required this.tx_reference,
+    this.order_id,
+  });
 
   factory CheckoutResponse.fromJson(Map<String, dynamic> json) {
     return CheckoutResponse(
       payment_link: json['payment_link'],
-      order_id: json['order_id'],
+      tx_reference: json['tx_reference'],
+      order_id: json['order_id'], // May be null or removed in future
     );
   }
+}
+
+// New model for payment verification response
+class PaymentVerificationResponse {
+  final String status; // Can be: PENDING, PAID, FAILED, ABANDONED
+
+  PaymentVerificationResponse({required this.status});
+
+  factory PaymentVerificationResponse.fromJson(Map<String, dynamic> json) {
+    return PaymentVerificationResponse(status: json['status']);
+  }
+
+  bool get isPaid => status == 'PAID';
+  bool get isPending => status == 'PENDING';
+  bool get isFailed => status == 'FAILED';
+  bool get isAbandoned => status == 'ABANDONED';
 }

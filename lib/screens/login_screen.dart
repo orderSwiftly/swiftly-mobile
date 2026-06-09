@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:swiftly_mobile/core/guard/role_gate.dart';
 import 'package:swiftly_mobile/core/theme/app_typography.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/password_field.dart';
@@ -7,6 +8,7 @@ import '../core/theme/app_colors.dart';
 import '../utils/validators.dart';
 import '../services/api_service.dart';
 import 'forgot_password_screen.dart';
+import 'main_wrapper.dart' hide UserRole; // Add this import
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -38,6 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _formKey.currentState?.reset();
   }
 
+// Simplified version - let ApiService handle everything
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
@@ -49,6 +52,13 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
         if (mounted) {
+          // ApiService already saved token and role to secure storage
+          // So we just need the role for navigation
+          final userRoleString = response['role'] as String;
+
+          // Get token from secure storage (already saved by ApiService)
+          final authToken = await _apiService.getToken();
+
           Validators.showSuccessSnackBar(
             context,
             'Login successful! Welcome back!',
@@ -58,7 +68,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
           await Future.delayed(const Duration(milliseconds: 1500));
           if (mounted) {
-            Navigator.pushReplacementNamed(context, '/dashboard');
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MainWrapper(
+                  role: userRoleString,
+                  token: authToken,
+                  userId: _emailController.text
+                      .trim(), // Use email as ID for now
+                ),
+              ),
+            );
           }
         }
       } catch (e) {
@@ -79,20 +99,15 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Wave header stays full width on all screen sizes
           const _GreenWaveHeader(),
           Expanded(
             child: SingleChildScrollView(
-              // ── DESKTOP ADAPTATION START ──
-              // Removed horizontal padding here; moved inside ConstrainedBox > Padding
               padding: const EdgeInsets.symmetric(vertical: 28),
               child: Center(
                 child: ConstrainedBox(
-                  // Caps form width at 520px on desktop; fills screen on mobile
                   constraints: const BoxConstraints(maxWidth: 520),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    // ── DESKTOP ADAPTATION END ──
                     child: Form(
                       key: _formKey,
                       child: Column(

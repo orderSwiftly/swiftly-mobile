@@ -1,4 +1,5 @@
 // top navigation bar with bell icon and avatar
+// widgets/navbar.dart
 
 import 'package:flutter/material.dart';
 import '../services/profile_service.dart';

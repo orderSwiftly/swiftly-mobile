@@ -12,7 +12,7 @@ import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/main_wrapper.dart'; // Import MainWrapper instead of DashboardScreen
+import 'screens/main_wrapper.dart';
 import 'core/theme/app_colors.dart';
 
 void main() async {
@@ -42,7 +42,7 @@ class _MyAppState extends ConsumerState<MyApp> {
   Future<void> _checkOnboardingStatus() async {
     try {
       final completed = await _apiService.isOnboardingCompleted();
-      print('Onboarding completed status: $completed'); // Debug log
+      print('Onboarding completed status: $completed');
       setState(() {
         _onboardingCompleted = completed;
         _isLoading = false;
@@ -60,9 +60,9 @@ class _MyAppState extends ConsumerState<MyApp> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    print('Auth state status: ${authState.value?.status}'); // Debug log
-    print('Onboarding completed: $_onboardingCompleted'); // Debug log
-    print('Is loading: $_isLoading'); // Debug log
+    print('Auth state status: ${authState.value?.status}');
+    print('Onboarding completed: $_onboardingCompleted');
+    print('Is loading: $_isLoading');
 
     return MaterialApp(
       title: 'Swiftly Mobile',
@@ -81,8 +81,6 @@ class _MyAppState extends ConsumerState<MyApp> {
             const VerifyEmailScreen(email: '', phone: ''),
         '/verify-otp': (context) => const VerifyOtpScreen(email: ''),
         '/forgot-password': (context) => const ForgotPasswordScreen(),
-        '/dashboard': (context) =>
-            const MainWrapper(), // Changed to MainWrapper
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/verify-otp') {
@@ -143,7 +141,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         // CASE 1: User is authenticated - go to dashboard wrapper
         if (state.status == AuthStatus.authenticated && state.user != null) {
           print('User is authenticated, showing MainWrapper');
-          return const MainWrapper(); // Changed to MainWrapper
+          return const MainWrapper();
         }
 
         // CASE 2: User not authenticated

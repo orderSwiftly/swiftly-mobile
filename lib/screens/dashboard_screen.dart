@@ -57,7 +57,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: AppColors.text,
       body: Column(
         children: [
-          _DashboardHeader(isMobile: isMobile, isDesktop: isDesktop),
+          _DashboardHeader(
+            isMobile: isMobile,
+            isDesktop: isDesktop,
+            showNavBar: true, // ✅ Customer dashboard shows the navbar
+          ),
           const SizedBox(height: 16),
 
           Padding(
@@ -120,17 +124,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 final products = snapshot.data!;
 
                 // ── DESKTOP ADAPTATION START ──
-                // More columns on wider screens: mobile=2, tablet=3, desktop=4
                 final int crossAxisCount = isDesktop ? 4 : (isMobile ? 2 : 3);
                 // ── DESKTOP ADAPTATION END ──
 
                 return GridView.builder(
-                  // ── DESKTOP ADAPTATION START ──
-                  // Extra padding on desktop so grid breathes inside the content area
                   padding: EdgeInsets.symmetric(
                     horizontal: isDesktop ? 24 : 16,
                   ),
-                  // ── DESKTOP ADAPTATION END ──
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: crossAxisCount,
                     childAspectRatio: 0.65,
@@ -179,8 +179,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class _DashboardHeader extends StatelessWidget {
   final bool isMobile;
   final bool isDesktop;
+  final bool showNavBar; // ✅ Added this parameter
 
-  const _DashboardHeader({required this.isMobile, required this.isDesktop});
+  const _DashboardHeader({
+    required this.isMobile,
+    required this.isDesktop,
+    this.showNavBar = false, // Default to false for safety
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -194,10 +199,7 @@ class _DashboardHeader extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // ── DESKTOP ADAPTATION START ──
-              // On desktop the sidebar already shows the app logo (swiftly-txt.png).
-              // The babcock.png here is the UNIVERSITY logo — a different asset —
-              // so we keep showing it on all screen sizes.
+              // University Logo
               Container(
                 width: isDesktop ? 50 : (isMobile ? 42 : 46),
                 height: isDesktop ? 50 : (isMobile ? 42 : 46),
@@ -224,7 +226,6 @@ class _DashboardHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              // ── DESKTOP ADAPTATION END ──
 
               // Mobile: centred "Home" title
               if (isMobile)
@@ -241,8 +242,7 @@ class _DashboardHeader extends StatelessWidget {
                   ),
                 ),
 
-              // ── DESKTOP ADAPTATION START ──
-              // Desktop: "Home" title left-aligned after the logo + bell on right
+              // Desktop layout
               if (isDesktop) ...[
                 const SizedBox(width: 12),
                 const Text(
@@ -254,12 +254,13 @@ class _DashboardHeader extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const AppNavBar(),
+                // ✅ Only show AppNavBar if showNavBar is true
+                if (showNavBar) const AppNavBar(),
               ],
 
-              // ── DESKTOP ADAPTATION END ──
-              if (isMobile) const AppNavBar(),
-              if (!isMobile && !isDesktop) const Spacer(),
+              // ✅ Mobile: Only show AppNavBar if showNavBar is true
+              if (isMobile && showNavBar) const AppNavBar(),
+              if (!isMobile && !isDesktop && showNavBar) const Spacer(),
             ],
           ),
         ),

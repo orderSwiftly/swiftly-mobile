@@ -4,12 +4,14 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../widgets/navigation.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
+import '../services/profile_service.dart';
 import 'dashboard_screen.dart';
 import 'cart_screen.dart';
 import 'orders_screen.dart';
 import 'profile_screen.dart';
 import 'rider_dashboard_screen.dart';
 import 'store_owner_dashboard_screen.dart';
+import 'store_owner/selecting_stores_screen.dart';
 
 enum UserRole { customer, rider, storeOwner }
 
@@ -57,6 +59,11 @@ class _MainWrapperState extends State<MainWrapper> {
       default:
         return UserRole.customer;
     }
+  }
+
+  Future<bool> _storeIsSelected() async {
+    final storeId = await _storage.read(key: 'active_store_id');
+    return storeId != null && storeId.isNotEmpty;
   }
 
   List<Widget> _getPagesForRole(UserRole role) {
@@ -165,50 +172,99 @@ class _MainWrapperState extends State<MainWrapper> {
     await _storage.delete(key: 'user_role');
     await _storage.delete(key: 'auth_token');
     await _storage.delete(key: 'user_id');
+    await _storage.delete(key: 'active_store_id');
     if (mounted) Navigator.pushReplacementNamed(context, '/login');
+  }
+
+  Widget _buildScaffold() {
+    final pages = _getPagesForRole(_currentRole!);
+    final navItems = _getNavItemsForRole(_currentRole!);
+    final bool isDesktop = MediaQuery.of(context).size.width >= 800;
+
+    if (isDesktop) {
+      return Scaffold(
+        backgroundColor: AppColors.prof,
+        body: Row(
+          children: [
+            _DesktopSidebar(
+              selectedIndex: _selectedIndex,
+              onIndexChanged: (index) => setState(() => _selectedIndex = index),
+              navItems: navItems,
+              onLogout: _logout,
+            ),
+            Expanded(child: ClipRect(child: pages[_selectedIndex])),
+          ],
+        ),
+      );
+    }
+
+    return ResponsiveScaffold(
+      currentIndex: _selectedIndex,
+      onIndexChanged: (index) => setState(() => _selectedIndex = index),
+      navItems: navItems,
+      appBar: null,
+      child: pages[_selectedIndex],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<UserRole?>(
       future: _futureRole,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+      builder: (context, roleSnapshot) {
+        if (roleSnapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        _currentRole = snapshot.data ?? UserRole.customer;
-        final pages = _getPagesForRole(_currentRole!);
-        final navItems = _getNavItemsForRole(_currentRole!);
-        final bool isDesktop = MediaQuery.of(context).size.width >= 800;
+        _currentRole = roleSnapshot.data ?? UserRole.customer;
 
-        if (isDesktop) {
-          return Scaffold(
-            backgroundColor: AppColors.prof,
-            body: Row(
-              children: [
-                _DesktopSidebar(
-                  selectedIndex: _selectedIndex,
-                  onIndexChanged: (index) =>
-                      setState(() => _selectedIndex = index),
-                  navItems: navItems,
-                  onLogout: _logout,
-                ),
-                Expanded(child: ClipRect(child: pages[_selectedIndex])),
-              ],
-            ),
+        // Store owner gate — must select a store before accessing dashboard
+        if (_currentRole == UserRole.storeOwner) {
+          return FutureBuilder<bool>(
+            future: _storeIsSelected(),
+            builder: (context, storeSnapshot) {
+              if (storeSnapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              final hasStore = storeSnapshot.data ?? false;
+
+              if (!hasStore) {
+                return FutureBuilder<Map<String, dynamic>?>(
+                  future: ProfileService().fetchUserProfile(),
+                  builder: (context, profileSnapshot) {
+                    if (profileSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Scaffold(
+                        body: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    final profile = profileSnapshot.data;
+                    final stores =
+                        (profile?['owned_stores'] as List?)
+                            ?.map((s) => Map<String, dynamic>.from(s))
+                            .toList() ??
+                        [];
+
+                    return SelectingStoresScreen(
+                      stores: stores,
+                      onStoreSelected: () => setState(() {}),
+                    );
+                  },
+                );
+              }
+
+              return _buildScaffold();
+            },
           );
         }
 
-        return ResponsiveScaffold(
-          currentIndex: _selectedIndex,
-          onIndexChanged: (index) => setState(() => _selectedIndex = index),
-          navItems: navItems, // ← role-aware items flow all the way down
-          appBar: null,
-          child: pages[_selectedIndex],
-        );
+        return _buildScaffold();
       },
     );
   }

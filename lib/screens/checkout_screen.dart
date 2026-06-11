@@ -19,13 +19,11 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final CheckoutService _checkoutService = CheckoutService();
-  List<Landmark> _landmarks = []; // Changed from _addresses
+  List<Landmark> _landmarks = [];
   bool _isLoading = true;
-  Landmark? _selectedLandmark; // Changed from _selectedAddress
-  String? _details;
+  Landmark? _selectedLandmark;
   final TextEditingController _detailsController = TextEditingController();
 
-  // New state for summary data
   CheckoutSummaryResponse? _summaryData;
   bool _isLoadingSummary = false;
   bool _isProcessing = false;
@@ -33,22 +31,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   void initState() {
     super.initState();
-    _loadLandmarks(); // Changed from _loadAddresses
+    _loadLandmarks();
   }
 
   Future<void> _loadLandmarks() async {
-    // Changed method name
     setState(() {
       _isLoading = true;
     });
 
     try {
       final response = await _checkoutService.listLandmarks(
-        // Changed method call
         widget.store_zone_id,
       );
       setState(() {
-        _landmarks = response.landmarks; // Note: Your model still uses 'landmarks' key internally
+        _landmarks = response.landmarks;
         _isLoading = false;
       });
     } catch (e) {
@@ -62,23 +58,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _selectLandmark(Landmark landmark) async {
-    // Changed from _selectAddress
     setState(() {
       _selectedLandmark = landmark;
-      _summaryData = null; // Clear previous summary
+      _summaryData = null;
       _isLoadingSummary = true;
     });
 
-    // Immediately fetch summary when landmark is selected
-    await _loadSummaryForLandmark(landmark); // Changed method call
+    await _loadSummaryForLandmark(landmark);
   }
 
   Future<void> _loadSummaryForLandmark(Landmark landmark) async {
-    // Changed parameter type
     try {
       final summary = await _checkoutService.getCheckoutSummary(
         widget.store_zone_id,
-        landmark.landmark_zone_id, // Changed from address.address_zone_id
+        landmark.landmark_zone_id,
       );
 
       if (mounted) {
@@ -101,11 +94,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _processCheckout() async {
     if (_selectedLandmark == null) {
-      // Changed from _selectedAddress
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a delivery landmark'),
-        ), // Changed text
+        const SnackBar(content: Text('Please select a delivery landmark')),
       );
       return;
     }
@@ -122,21 +112,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     try {
       final response = await _checkoutService.createCheckout(
         widget.store_zone_id,
-        _selectedLandmark!.landmark_id, // Changed from address_id
-        _selectedLandmark!.landmark_zone_id, // Changed from address_zone_id
+        _selectedLandmark!.landmark_id,
+        _selectedLandmark!.landmark_zone_id,
         _detailsController.text,
       );
 
       if (mounted) {
-        Navigator.push(
+        // Navigate to payment and wait for it to close
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => PaymentWebView(
               payment_link: response.payment_link,
-              order_id: response.order_id,
+              tx_reference: response.tx_reference,
             ),
           ),
         );
+
+        // After payment WebView closes, show success and go home
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Payment successful! Order confirmed.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Navigate back to home screen
+          Navigator.popUntil(context, (route) => route.isFirst);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -174,7 +178,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // Desktop layout: three columns or two with summary on right
   Widget _buildDesktopLayout() {
     return Center(
       child: ConstrainedBox(
@@ -184,13 +187,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left column — delivery landmark selection
-              Expanded(
-                flex: 4,
-                child: _buildLandmarkSection(),
-              ), // Changed method name
+              Expanded(flex: 4, child: _buildLandmarkSection()),
               const SizedBox(width: 32),
-              // Right column — order summary (shown when landmark selected)
               Expanded(flex: 4, child: _buildSummarySection()),
             ],
           ),
@@ -200,7 +198,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildLandmarkSection() {
-    // Changed from _buildAddressSection
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -208,7 +205,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'Delivery Landmark', // Changed text
+              'Delivery Landmark',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             TextButton.icon(
@@ -222,16 +219,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                 );
                 if (result == true) {
-                  _loadLandmarks(); // Changed method call
+                  _loadLandmarks();
                 }
               },
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('New Landmark'), // Changed text
+              label: const Text('New Landmark'),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        if (_landmarks.isEmpty) // Changed from _addresses
+        if (_landmarks.isEmpty)
           Card(
             child: Padding(
               padding: const EdgeInsets.all(32),
@@ -243,7 +240,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     color: AppColors.textSecondary,
                   ),
                   const SizedBox(height: 8),
-                  const Text('No landmarks found'), // Changed text
+                  const Text('No landmarks found'),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () async {
@@ -255,10 +252,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         ),
                       );
-                      if (result == true)
-                        _loadLandmarks(); // Changed method call
+                      if (result == true) _loadLandmarks();
                     },
-                    child: const Text('Add Landmark'), // Changed text
+                    child: const Text('Add Landmark'),
                   ),
                 ],
               ),
@@ -267,35 +263,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         else
           Expanded(
             child: ListView(
-              children:
-                  _landmarks // Changed from _addresses
-                      .map(
-                        (landmark) => Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: RadioListTile<Landmark>(
-                            value: landmark,
-                            groupValue: _selectedLandmark,
-                            onChanged: (value) =>
-                                _selectLandmark(value!), // Changed method call
-                            title: Text(
-                              landmark
-                                  .landmark_name, // Changed from address_name
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            subtitle: Text(
-                              landmark.landmark_zone_name,
-                            ), // Changed from address_zone_name
-                            activeColor: AppColors.prof,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                          ),
+              children: _landmarks
+                  .map(
+                    (landmark) => Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: RadioListTile<Landmark>(
+                        value: landmark,
+                        groupValue: _selectedLandmark,
+                        onChanged: (value) => _selectLandmark(value!),
+                        title: Text(
+                          landmark.landmark_name,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
-                      )
-                      .toList(),
+                        subtitle: Text(landmark.landmark_zone_name),
+                        activeColor: AppColors.prof,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
           ),
         const SizedBox(height: 24),
@@ -324,7 +313,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Widget _buildSummarySection() {
     if (_selectedLandmark == null) {
-      // Changed from _selectedAddress
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -342,7 +330,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Select a delivery landmark to see your order total', // Changed text
+                'Select a delivery landmark to see your order total',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.textSecondary),
               ),
@@ -381,9 +369,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               const Text('Failed to load order summary'),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => _loadSummaryForLandmark(
-                  _selectedLandmark!,
-                ), // Changed method call
+                onPressed: () => _loadSummaryForLandmark(_selectedLandmark!),
                 child: const Text('Retry'),
               ),
             ],
@@ -408,7 +394,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Order items preview (first few items)
             const Text(
               'Items',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -449,7 +434,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
             const Divider(height: 24),
 
-            // Price breakdown
             _buildPriceRow(
               'Subtotal',
               '₦${_summaryData!.subtotal.toStringAsFixed(2)}',
@@ -473,7 +457,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
             const SizedBox(height: 24),
 
-            // Delivery landmark info
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -489,8 +472,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _selectedLandmark!
-                        .landmark_name, // Changed from address_name
+                    _selectedLandmark!.landmark_name,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   if (_detailsController.text.isNotEmpty)
@@ -510,7 +492,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
             const SizedBox(height: 24),
 
-            // Confirm & Pay button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -545,7 +526,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // Mobile layout with summary below landmark selection
   Widget _buildMobileLayout() {
     return Column(
       children: [
@@ -555,12 +535,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Landmark selection section
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Delivery Landmark', // Changed text
+                      'Delivery Landmark',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -577,17 +556,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         );
                         if (result == true) {
-                          _loadLandmarks(); // Changed method call
+                          _loadLandmarks();
                         }
                       },
                       icon: const Icon(Icons.add, size: 18),
-                      label: const Text('New Landmark'), // Changed text
+                      label: const Text('New Landmark'),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
 
-                if (_landmarks.isEmpty) // Changed from _addresses
+                if (_landmarks.isEmpty)
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(32),
@@ -599,7 +578,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             color: AppColors.textSecondary,
                           ),
                           const SizedBox(height: 8),
-                          const Text('No landmarks found'), // Changed text
+                          const Text('No landmarks found'),
                           const SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: () async {
@@ -611,10 +590,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   ),
                                 ),
                               );
-                              if (result == true)
-                                _loadLandmarks(); // Changed method call
+                              if (result == true) _loadLandmarks();
                             },
-                            child: const Text('Add Landmark'), // Changed text
+                            child: const Text('Add Landmark'),
                           ),
                         ],
                       ),
@@ -622,21 +600,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   )
                 else
                   ..._landmarks.map(
-                    // Changed from _addresses
                     (landmark) => Card(
                       margin: const EdgeInsets.only(bottom: 12),
                       child: RadioListTile<Landmark>(
                         value: landmark,
                         groupValue: _selectedLandmark,
-                        onChanged: (value) =>
-                            _selectLandmark(value!), // Changed method call
+                        onChanged: (value) => _selectLandmark(value!),
                         title: Text(
-                          landmark.landmark_name, // Changed from address_name
+                          landmark.landmark_name,
                           style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
-                        subtitle: Text(
-                          landmark.landmark_zone_name,
-                        ), // Changed from address_zone_name
+                        subtitle: Text(landmark.landmark_zone_name),
                         activeColor: AppColors.prof,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -675,9 +649,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                 const SizedBox(height: 24),
 
-                // Order Summary Section (shown when landmark selected)
                 if (_selectedLandmark != null) ...[
-                  // Changed from _selectedAddress
                   const Divider(),
                   const SizedBox(height: 16),
                   const Text(
@@ -747,7 +719,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ),
 
-        // Confirm button pinned at bottom
         Container(
           padding: const EdgeInsets.all(16),
           margin: const EdgeInsets.only(bottom: 16),
@@ -766,7 +737,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed:
-                  (_selectedLandmark != null && // Changed from _selectedAddress
+                  (_selectedLandmark != null &&
                       !_isLoadingSummary &&
                       !_isProcessing)
                   ? _processCheckout
@@ -825,13 +796,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 }
 
-// PaymentWebView class remains the same (keep it as is)
 class PaymentWebView extends StatefulWidget {
   final String payment_link;
-  final String? order_id;
+  final String tx_reference;
 
-  const PaymentWebView({Key? key, required this.payment_link, this.order_id})
-    : super(key: key);
+  const PaymentWebView({
+    Key? key,
+    required this.payment_link,
+    required this.tx_reference,
+  }) : super(key: key);
 
   @override
   State<PaymentWebView> createState() => _PaymentWebViewState();
@@ -844,8 +817,10 @@ class _PaymentWebViewState extends State<PaymentWebView> {
   @override
   void initState() {
     super.initState();
+
     _webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.white)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
@@ -853,37 +828,21 @@ class _PaymentWebViewState extends State<PaymentWebView> {
           },
           onPageFinished: (String url) {
             setState(() => _isLoading = false);
-            if (url.contains('success') || url.contains('complete')) {
-              _handlePaymentSuccess();
-            } else if (url.contains('failed') || url.contains('error')) {
-              _handlePaymentFailure();
+          },
+          onNavigationRequest: (NavigationRequest request) {
+            // When payment is completed, Flutterwave redirects
+            // Just close the WebView and let the backend handle the rest
+            if (request.url.contains('complete') ||
+                request.url.contains('success') ||
+                request.url.contains('thank-you')) {
+              Navigator.pop(context);
+              return NavigationDecision.prevent;
             }
+            return NavigationDecision.navigate;
           },
         ),
       )
       ..loadRequest(Uri.parse(widget.payment_link));
-  }
-
-  void _handlePaymentSuccess() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Payment successful! Order confirmed.'),
-        backgroundColor: Colors.green,
-      ),
-    );
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.popUntil(context, (route) => route.isFirst);
-    });
-  }
-
-  void _handlePaymentFailure() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Payment failed. Please try again.'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    Navigator.pop(context);
   }
 
   @override
@@ -902,9 +861,27 @@ class _PaymentWebViewState extends State<PaymentWebView> {
         children: [
           WebViewWidget(controller: _webViewController),
           if (_isLoading)
-            Center(child: CircularProgressIndicator(color: AppColors.accent)),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(color: AppColors.accent),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading payment page...',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _webViewController.clearCache();
+    super.dispose();
   }
 }

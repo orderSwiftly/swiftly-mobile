@@ -1,15 +1,26 @@
 // screens/main_wrapper.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../widgets/navigation.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
+import '../services/profile_service.dart';
 import 'dashboard_screen.dart';
 import 'cart_screen.dart';
 import 'orders_screen.dart';
 import 'profile_screen.dart';
+import 'rider_dashboard_screen.dart';
+import 'store_owner_dashboard_screen.dart';
+import 'store_owner/selecting_stores_screen.dart';
+
+enum UserRole { customer, rider, storeOwner }
 
 class MainWrapper extends StatefulWidget {
-  const MainWrapper({super.key});
+  final String? role;
+  final String? token;
+  final String? userId;
+
+  const MainWrapper({super.key, this.role, this.token, this.userId});
 
   @override
   State<MainWrapper> createState() => _MainWrapperState();
@@ -17,17 +28,157 @@ class MainWrapper extends StatefulWidget {
 
 class _MainWrapperState extends State<MainWrapper> {
   int _selectedIndex = 0;
+  late Future<UserRole?> _futureRole;
+  UserRole? _currentRole;
 
-  final List<Widget> _pages = [
-    const DashboardScreen(),
-    const CartScreen(),
-    const OrdersScreen(),
-    const ProfileScreen(),
-  ];
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   @override
-  Widget build(BuildContext context) {
-    // ── DESKTOP ADAPTATION START ──
+  void initState() {
+    super.initState();
+    _futureRole = _getUserRole();
+  }
+
+  Future<UserRole?> _getUserRole() async {
+    if (widget.role != null) {
+      await _storage.write(key: 'user_role', value: widget.role!);
+      await _storage.write(key: 'auth_token', value: widget.token ?? '');
+      await _storage.write(key: 'user_id', value: widget.userId ?? '');
+      return _stringToRole(widget.role!);
+    }
+    final roleString = await _storage.read(key: 'user_role') ?? 'CUSTOMER';
+    return _stringToRole(roleString);
+  }
+
+  UserRole _stringToRole(String role) {
+    switch (role.toUpperCase()) {
+      case 'RIDER':
+        return UserRole.rider;
+      case 'STORE_OWNER':
+        return UserRole.storeOwner;
+      default:
+        return UserRole.customer;
+    }
+  }
+
+  Future<bool> _storeIsSelected() async {
+    final storeId = await _storage.read(key: 'active_store_id');
+    return storeId != null && storeId.isNotEmpty;
+  }
+
+  List<Widget> _getPagesForRole(UserRole role) {
+    switch (role) {
+      case UserRole.rider:
+        return [
+          const RiderDashboardScreen(),
+          const PlaceholderScreen(title: 'Deliveries'),
+          const PlaceholderScreen(title: 'Earnings'),
+          const ProfileScreen(),
+        ];
+      case UserRole.storeOwner:
+        return [
+          const StoreOwnerDashboardScreen(),
+          const PlaceholderScreen(title: 'Products'),
+          const PlaceholderScreen(title: 'Orders'),
+          const ProfileScreen(),
+        ];
+      case UserRole.customer:
+      default:
+        return [
+          const DashboardScreen(),
+          const CartScreen(),
+          const OrdersScreen(),
+          const ProfileScreen(),
+        ];
+    }
+  }
+
+  List<RoleNavItem> _getNavItemsForRole(UserRole role) {
+    switch (role) {
+      case UserRole.rider:
+        return const [
+          RoleNavItem(
+            icon: Icons.delivery_dining_outlined,
+            activeIcon: Icons.delivery_dining,
+            label: 'Dashboard',
+          ),
+          RoleNavItem(
+            icon: Icons.map_outlined,
+            activeIcon: Icons.map,
+            label: 'Deliveries',
+          ),
+          RoleNavItem(
+            icon: Icons.monetization_on_outlined,
+            activeIcon: Icons.monetization_on,
+            label: 'Earnings',
+          ),
+          RoleNavItem(
+            icon: Icons.person_outline,
+            activeIcon: Icons.person,
+            label: 'Profile',
+          ),
+        ];
+      case UserRole.storeOwner:
+        return const [
+          RoleNavItem(
+            icon: Icons.store_outlined,
+            activeIcon: Icons.store,
+            label: 'Dashboard',
+          ),
+          RoleNavItem(
+            icon: Icons.inventory_2_outlined,
+            activeIcon: Icons.inventory_2,
+            label: 'Products',
+          ),
+          RoleNavItem(
+            icon: Icons.receipt_long_outlined,
+            activeIcon: Icons.receipt_long,
+            label: 'Orders',
+          ),
+          RoleNavItem(
+            icon: Icons.person_outline,
+            activeIcon: Icons.person,
+            label: 'Profile',
+          ),
+        ];
+      case UserRole.customer:
+      default:
+        return const [
+          RoleNavItem(
+            icon: Icons.home_outlined,
+            activeIcon: Icons.home_rounded,
+            label: 'Home',
+          ),
+          RoleNavItem(
+            icon: Icons.shopping_cart_outlined,
+            activeIcon: Icons.shopping_cart,
+            label: 'Cart',
+          ),
+          RoleNavItem(
+            icon: Icons.receipt_outlined,
+            activeIcon: Icons.receipt,
+            label: 'Orders',
+          ),
+          RoleNavItem(
+            icon: Icons.person_outline,
+            activeIcon: Icons.person,
+            label: 'Profile',
+          ),
+        ];
+    }
+  }
+
+  Future<void> _logout() async {
+    await _storage.delete(key: 'user_role');
+    await _storage.delete(key: 'auth_token');
+    await _storage.delete(key: 'user_id');
+    await _storage.delete(key: 'active_store_id');
+    if (mounted) Navigator.pushReplacementNamed(context, '/login');
+  }
+
+  Widget _buildScaffold() {
+    final pages = _getPagesForRole(_currentRole!);
+    final navItems = _getNavItemsForRole(_currentRole!);
     final bool isDesktop = MediaQuery.of(context).size.width >= 800;
 
     if (isDesktop) {
@@ -35,70 +186,120 @@ class _MainWrapperState extends State<MainWrapper> {
         backgroundColor: AppColors.prof,
         body: Row(
           children: [
-            // Persistent left sidebar — replaces bottom nav on desktop
             _DesktopSidebar(
               selectedIndex: _selectedIndex,
-              onIndexChanged: (index) {
-                setState(() => _selectedIndex = index);
-              },
+              onIndexChanged: (index) => setState(() => _selectedIndex = index),
+              navItems: navItems,
+              onLogout: _logout,
             ),
-            // Main content area — ClipRect prevents any overflow bleeding
-            Expanded(child: ClipRect(child: _pages[_selectedIndex])),
+            Expanded(child: ClipRect(child: pages[_selectedIndex])),
           ],
         ),
       );
     }
-    // ── DESKTOP ADAPTATION END ──
 
-    // Original mobile layout — unchanged
     return ResponsiveScaffold(
       currentIndex: _selectedIndex,
-      onIndexChanged: (index) {
-        setState(() => _selectedIndex = index);
-      },
+      onIndexChanged: (index) => setState(() => _selectedIndex = index),
+      navItems: navItems,
       appBar: null,
-      child: _pages[_selectedIndex],
+      child: pages[_selectedIndex],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<UserRole?>(
+      future: _futureRole,
+      builder: (context, roleSnapshot) {
+        if (roleSnapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        _currentRole = roleSnapshot.data ?? UserRole.customer;
+
+        // Store owner gate — must select a store before accessing dashboard
+        if (_currentRole == UserRole.storeOwner) {
+          return FutureBuilder<bool>(
+            future: _storeIsSelected(),
+            builder: (context, storeSnapshot) {
+              if (storeSnapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              final hasStore = storeSnapshot.data ?? false;
+
+              if (!hasStore) {
+                return FutureBuilder<Map<String, dynamic>?>(
+                  future: ProfileService().fetchUserProfile(),
+                  builder: (context, profileSnapshot) {
+                    if (profileSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Scaffold(
+                        body: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    final profile = profileSnapshot.data;
+                    final stores =
+                        (profile?['owned_stores'] as List?)
+                            ?.map((s) => Map<String, dynamic>.from(s))
+                            .toList() ??
+                        [];
+
+                    return SelectingStoresScreen(
+                      stores: stores,
+                      onStoreSelected: () => setState(() {}),
+                    );
+                  },
+                );
+              }
+
+              return _buildScaffold();
+            },
+          );
+        }
+
+        return _buildScaffold();
+      },
     );
   }
 }
 
-// ── DESKTOP ADAPTATION START ──
 class _DesktopSidebar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onIndexChanged;
+  final List<RoleNavItem> navItems;
+  final VoidCallback onLogout;
 
   const _DesktopSidebar({
     required this.selectedIndex,
     required this.onIndexChanged,
+    required this.navItems,
+    required this.onLogout,
   });
-
-  static const List<_NavItem> _items = [
-    _NavItem(icon: Icons.home_rounded, label: 'Home'),
-    _NavItem(icon: Icons.shopping_cart_outlined, label: 'Cart'),
-    _NavItem(icon: Icons.receipt_outlined, label: 'Orders'),
-    _NavItem(icon: Icons.person_outline, label: 'Profile'),
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 220,
-      color: AppColors.prof, // dark green — white icons are visible on this
+      color: AppColors.prof,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── FIX: Logo area — use enough height and correct padding
-          // so the image actually renders and isn't clipped by SafeArea
           SafeArea(
             bottom: false,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               child: Image.asset(
                 'assets/images/swiftly-txt.png',
-                width: 140, // explicit width so the image isn't zero-sized
+                width: 140,
                 fit: BoxFit.contain,
-                // Fallback text in case asset path hasn't been verified
-                errorBuilder: (_, __, ___) => Text(
+                errorBuilder: (_, __, ___) => const Text(
                   'Swiftly',
                   style: TextStyle(
                     color: Colors.white,
@@ -109,28 +310,24 @@ class _DesktopSidebar extends StatelessWidget {
               ),
             ),
           ),
-
           const Divider(color: Colors.white24, height: 1),
           const SizedBox(height: 12),
-
-          // Nav items
-          ...List.generate(_items.length, (index) {
-            final item = _items[index];
+          ...List.generate(navItems.length, (index) {
+            final item = navItems[index];
             final bool isActive = selectedIndex == index;
             return _SidebarNavTile(
-              item: item,
+              icon: isActive ? item.activeIcon : item.icon,
+              label: item.label,
               isActive: isActive,
               onTap: () => onIndexChanged(index),
             );
           }),
-
           const Spacer(),
-
-          // Settings pinned at the bottom
-          const _SidebarNavTile(
-            item: _NavItem(icon: Icons.settings_outlined, label: 'Settings'),
+          _SidebarNavTile(
+            icon: Icons.logout_outlined,
+            label: 'Logout',
             isActive: false,
-            onTap: null,
+            onTap: onLogout,
           ),
           const SizedBox(height: 24),
         ],
@@ -139,19 +336,15 @@ class _DesktopSidebar extends StatelessWidget {
   }
 }
 
-class _NavItem {
+class _SidebarNavTile extends StatelessWidget {
   final IconData icon;
   final String label;
-  const _NavItem({required this.icon, required this.label});
-}
-
-class _SidebarNavTile extends StatelessWidget {
-  final _NavItem item;
   final bool isActive;
   final VoidCallback? onTap;
 
   const _SidebarNavTile({
-    required this.item,
+    required this.icon,
+    required this.label,
     required this.isActive,
     required this.onTap,
   });
@@ -166,12 +359,12 @@ class _SidebarNavTile extends StatelessWidget {
       ),
       child: ListTile(
         leading: Icon(
-          item.icon,
+          icon,
           color: isActive ? Colors.white : Colors.white60,
           size: 22,
         ),
         title: Text(
-          item.label,
+          label,
           style: TextStyle(
             color: isActive ? Colors.white : Colors.white60,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
@@ -185,4 +378,35 @@ class _SidebarNavTile extends StatelessWidget {
     );
   }
 }
-// ── DESKTOP ADAPTATION END ──
+
+class PlaceholderScreen extends StatelessWidget {
+  final String title;
+  const PlaceholderScreen({super.key, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.text,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.construction, size: 64, color: AppColors.textSecondary),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: AppTypography.headline.copyWith(color: AppColors.primary),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Coming Soon',
+              style: AppTypography.body.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

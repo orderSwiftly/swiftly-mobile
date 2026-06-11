@@ -24,11 +24,10 @@ class CheckoutService {
     };
   }
 
-  // Changed: method name and endpoint
   Future<ListLandmarksResponse> listLandmarks(String store_zone_id) async {
     final headers = await _getHeaders();
     final response = await http.get(
-      Uri.parse('$baseUrl/v2/landmarks/$store_zone_id'), // Changed endpoint
+      Uri.parse('$baseUrl/v2/landmarks/$store_zone_id'),
       headers: headers,
     );
 
@@ -39,15 +38,14 @@ class CheckoutService {
     }
   }
 
-  // Changed: parameter name from address_zone_id to landmark_zone_id
   Future<CheckoutSummaryResponse> getCheckoutSummary(
     String store_zone_id,
-    String landmark_zone_id, // Changed parameter name
+    String landmark_zone_id,
   ) async {
     final headers = await _getHeaders();
     final response = await http.get(
       Uri.parse(
-        '$baseUrl/v2/checkout/$store_zone_id/summary?landmark_zone_id=$landmark_zone_id', // Changed query param
+        '$baseUrl/v2/checkout/$store_zone_id/summary?landmark_zone_id=$landmark_zone_id',
       ),
       headers: headers,
     );
@@ -61,17 +59,16 @@ class CheckoutService {
     }
   }
 
-  // Changed: parameter names from address_* to landmark_*
   Future<CheckoutResponse> createCheckout(
     String store_zone_id,
-    String landmark_id, // Changed from address_id
-    String landmark_zone_id, // Changed from address_zone_id
+    String landmark_id,
+    String landmark_zone_id,
     String? details,
   ) async {
     final headers = await _getHeaders();
     final body = json.encode({
-      'landmark_id': landmark_id, // Changed key name
-      'landmark_zone_id': landmark_zone_id, // Changed key name
+      'landmark_id': landmark_id,
+      'landmark_zone_id': landmark_zone_id,
       'details': details ?? '',
     });
 
@@ -91,6 +88,21 @@ class CheckoutService {
       );
     } else {
       throw Exception('Failed to create checkout: ${response.statusCode}');
+    }
+  }
+
+  // New method to verify payment status
+  Future<PaymentVerificationResponse> verifyPayment(String tx_reference) async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/v2/payment/order/$tx_reference'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      return PaymentVerificationResponse.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to verify payment: ${response.statusCode}');
     }
   }
 }

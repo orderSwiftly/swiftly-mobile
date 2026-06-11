@@ -1,6 +1,6 @@
 // screens/main_wrapper.dart
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../widgets/navigation.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
@@ -11,11 +11,10 @@ import 'profile_screen.dart';
 import 'rider_dashboard_screen.dart';
 import 'store_owner_dashboard_screen.dart';
 
-// User role enum
 enum UserRole { customer, rider, storeOwner }
 
 class MainWrapper extends StatefulWidget {
-  final String? role; // Pass from login: "CUSTOMER", "RIDER", "STORE_OWNER"
+  final String? role;
   final String? token;
   final String? userId;
 
@@ -30,6 +29,8 @@ class _MainWrapperState extends State<MainWrapper> {
   late Future<UserRole?> _futureRole;
   UserRole? _currentRole;
 
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
   @override
   void initState() {
     super.initState();
@@ -37,20 +38,13 @@ class _MainWrapperState extends State<MainWrapper> {
   }
 
   Future<UserRole?> _getUserRole() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // If role was passed directly (from login)
     if (widget.role != null) {
-      // Store the role in lowercase for enum compatibility
-      await prefs.setString('user_role', widget.role!.toLowerCase());
-      await prefs.setString('auth_token', widget.token ?? '');
-      await prefs.setString('user_id', widget.userId ?? '');
+      await _storage.write(key: 'user_role', value: widget.role!);
+      await _storage.write(key: 'auth_token', value: widget.token ?? '');
+      await _storage.write(key: 'user_id', value: widget.userId ?? '');
       return _stringToRole(widget.role!);
     }
-
-    // Otherwise get from storage
-    final roleString = prefs.getString('user_role');
-    if (roleString == null) return UserRole.customer;
+    final roleString = await _storage.read(key: 'user_role') ?? 'CUSTOMER';
     return _stringToRole(roleString);
   }
 
@@ -65,7 +59,6 @@ class _MainWrapperState extends State<MainWrapper> {
     }
   }
 
-  // Helper method to get pages based on role
   List<Widget> _getPagesForRole(UserRole role) {
     switch (role) {
       case UserRole.rider:
@@ -93,42 +86,86 @@ class _MainWrapperState extends State<MainWrapper> {
     }
   }
 
-  // Helper method to get nav items based on role
-  List<_NavItem> _getNavItemsForRole(UserRole role) {
+  List<RoleNavItem> _getNavItemsForRole(UserRole role) {
     switch (role) {
       case UserRole.rider:
         return const [
-          _NavItem(icon: Icons.delivery_dining, label: 'Dashboard'),
-          _NavItem(icon: Icons.map_outlined, label: 'Deliveries'),
-          _NavItem(icon: Icons.monetization_on_outlined, label: 'Earnings'),
-          _NavItem(icon: Icons.person_outline, label: 'Profile'),
+          RoleNavItem(
+            icon: Icons.delivery_dining_outlined,
+            activeIcon: Icons.delivery_dining,
+            label: 'Dashboard',
+          ),
+          RoleNavItem(
+            icon: Icons.map_outlined,
+            activeIcon: Icons.map,
+            label: 'Deliveries',
+          ),
+          RoleNavItem(
+            icon: Icons.monetization_on_outlined,
+            activeIcon: Icons.monetization_on,
+            label: 'Earnings',
+          ),
+          RoleNavItem(
+            icon: Icons.person_outline,
+            activeIcon: Icons.person,
+            label: 'Profile',
+          ),
         ];
       case UserRole.storeOwner:
         return const [
-          _NavItem(icon: Icons.store, label: 'Dashboard'),
-          _NavItem(icon: Icons.inventory_2_outlined, label: 'Products'),
-          _NavItem(icon: Icons.receipt_long, label: 'Orders'),
-          _NavItem(icon: Icons.person_outline, label: 'Profile'),
+          RoleNavItem(
+            icon: Icons.store_outlined,
+            activeIcon: Icons.store,
+            label: 'Dashboard',
+          ),
+          RoleNavItem(
+            icon: Icons.inventory_2_outlined,
+            activeIcon: Icons.inventory_2,
+            label: 'Products',
+          ),
+          RoleNavItem(
+            icon: Icons.receipt_long_outlined,
+            activeIcon: Icons.receipt_long,
+            label: 'Orders',
+          ),
+          RoleNavItem(
+            icon: Icons.person_outline,
+            activeIcon: Icons.person,
+            label: 'Profile',
+          ),
         ];
       case UserRole.customer:
       default:
         return const [
-          _NavItem(icon: Icons.home_rounded, label: 'Home'),
-          _NavItem(icon: Icons.shopping_cart_outlined, label: 'Cart'),
-          _NavItem(icon: Icons.receipt_outlined, label: 'Orders'),
-          _NavItem(icon: Icons.person_outline, label: 'Profile'),
+          RoleNavItem(
+            icon: Icons.home_outlined,
+            activeIcon: Icons.home_rounded,
+            label: 'Home',
+          ),
+          RoleNavItem(
+            icon: Icons.shopping_cart_outlined,
+            activeIcon: Icons.shopping_cart,
+            label: 'Cart',
+          ),
+          RoleNavItem(
+            icon: Icons.receipt_outlined,
+            activeIcon: Icons.receipt,
+            label: 'Orders',
+          ),
+          RoleNavItem(
+            icon: Icons.person_outline,
+            activeIcon: Icons.person,
+            label: 'Profile',
+          ),
         ];
     }
   }
 
   Future<void> _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('user_role');
-    await prefs.remove('auth_token');
-    await prefs.remove('user_id');
-    if (mounted) {
-      Navigator.pushReplacementNamed(context, '/login');
-    }
+    await _storage.delete(key: 'user_role');
+    await _storage.delete(key: 'auth_token');
+    await _storage.delete(key: 'user_id');
+    if (mounted) Navigator.pushReplacementNamed(context, '/login');
   }
 
   @override
@@ -145,8 +182,6 @@ class _MainWrapperState extends State<MainWrapper> {
         _currentRole = snapshot.data ?? UserRole.customer;
         final pages = _getPagesForRole(_currentRole!);
         final navItems = _getNavItemsForRole(_currentRole!);
-
-        // ── DESKTOP ADAPTATION START ──
         final bool isDesktop = MediaQuery.of(context).size.width >= 800;
 
         if (isDesktop) {
@@ -154,29 +189,23 @@ class _MainWrapperState extends State<MainWrapper> {
             backgroundColor: AppColors.prof,
             body: Row(
               children: [
-                // Persistent left sidebar — replaces bottom nav on desktop
                 _DesktopSidebar(
                   selectedIndex: _selectedIndex,
-                  onIndexChanged: (index) {
-                    setState(() => _selectedIndex = index);
-                  },
+                  onIndexChanged: (index) =>
+                      setState(() => _selectedIndex = index),
                   navItems: navItems,
                   onLogout: _logout,
                 ),
-                // Main content area — ClipRect prevents any overflow bleeding
                 Expanded(child: ClipRect(child: pages[_selectedIndex])),
               ],
             ),
           );
         }
-        // ── DESKTOP ADAPTATION END ──
 
-        // Original mobile layout — unchanged
         return ResponsiveScaffold(
           currentIndex: _selectedIndex,
-          onIndexChanged: (index) {
-            setState(() => _selectedIndex = index);
-          },
+          onIndexChanged: (index) => setState(() => _selectedIndex = index),
+          navItems: navItems, // ← role-aware items flow all the way down
           appBar: null,
           child: pages[_selectedIndex],
         );
@@ -185,11 +214,10 @@ class _MainWrapperState extends State<MainWrapper> {
   }
 }
 
-// ── DESKTOP ADAPTATION START ──
 class _DesktopSidebar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onIndexChanged;
-  final List<_NavItem> navItems;
+  final List<RoleNavItem> navItems;
   final VoidCallback onLogout;
 
   const _DesktopSidebar({
@@ -207,7 +235,6 @@ class _DesktopSidebar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Logo area
           SafeArea(
             bottom: false,
             child: Padding(
@@ -216,7 +243,7 @@ class _DesktopSidebar extends StatelessWidget {
                 'assets/images/swiftly-txt.png',
                 width: 140,
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => Text(
+                errorBuilder: (_, __, ___) => const Text(
                   'Swiftly',
                   style: TextStyle(
                     color: Colors.white,
@@ -227,26 +254,22 @@ class _DesktopSidebar extends StatelessWidget {
               ),
             ),
           ),
-
           const Divider(color: Colors.white24, height: 1),
           const SizedBox(height: 12),
-
-          // Nav items
           ...List.generate(navItems.length, (index) {
             final item = navItems[index];
             final bool isActive = selectedIndex == index;
             return _SidebarNavTile(
-              item: item,
+              icon: isActive ? item.activeIcon : item.icon,
+              label: item.label,
               isActive: isActive,
               onTap: () => onIndexChanged(index),
             );
           }),
-
           const Spacer(),
-
-          // Logout button at bottom
           _SidebarNavTile(
-            item: const _NavItem(icon: Icons.logout_outlined, label: 'Logout'),
+            icon: Icons.logout_outlined,
+            label: 'Logout',
             isActive: false,
             onTap: onLogout,
           ),
@@ -257,19 +280,15 @@ class _DesktopSidebar extends StatelessWidget {
   }
 }
 
-class _NavItem {
+class _SidebarNavTile extends StatelessWidget {
   final IconData icon;
   final String label;
-  const _NavItem({required this.icon, required this.label});
-}
-
-class _SidebarNavTile extends StatelessWidget {
-  final _NavItem item;
   final bool isActive;
   final VoidCallback? onTap;
 
   const _SidebarNavTile({
-    required this.item,
+    required this.icon,
+    required this.label,
     required this.isActive,
     required this.onTap,
   });
@@ -284,12 +303,12 @@ class _SidebarNavTile extends StatelessWidget {
       ),
       child: ListTile(
         leading: Icon(
-          item.icon,
+          icon,
           color: isActive ? Colors.white : Colors.white60,
           size: 22,
         ),
         title: Text(
-          item.label,
+          label,
           style: TextStyle(
             color: isActive ? Colors.white : Colors.white60,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
@@ -304,7 +323,6 @@ class _SidebarNavTile extends StatelessWidget {
   }
 }
 
-// Temporary placeholder screen for rider/store owner tabs that don't exist yet
 class PlaceholderScreen extends StatelessWidget {
   final String title;
   const PlaceholderScreen({super.key, required this.title});
@@ -336,4 +354,3 @@ class PlaceholderScreen extends StatelessWidget {
     );
   }
 }
-// ── DESKTOP ADAPTATION END ──

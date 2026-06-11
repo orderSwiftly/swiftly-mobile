@@ -1,6 +1,4 @@
-// top navigation bar with bell icon and avatar
 // widgets/navbar.dart
-
 import 'package:flutter/material.dart';
 import '../services/profile_service.dart';
 import '../core/theme/app_colors.dart';
@@ -27,9 +25,22 @@ class _AppNavBarState extends State<AppNavBar> {
     if (mounted) setState(() => _profile = data);
   }
 
+  String? _validUrl(String? url) {
+    if (url == null || url.trim().isEmpty) return null;
+    if (!url.startsWith('http')) return null;
+    return url;
+  }
+
+  String _initials(String? name) {
+    if (name == null || name.isEmpty) return '?';
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    return parts[0][0].toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final String? avatarUrl = _profile?['picture_url'];
+    final String? avatarUrl = _validUrl(_profile?['picture_url']);
     final String? name = _profile != null
         ? '${_profile!['first_name'] ?? ''} ${_profile!['last_name'] ?? ''}'
               .trim()
@@ -38,7 +49,6 @@ class _AppNavBarState extends State<AppNavBar> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Bell icon
         Stack(
           clipBehavior: Clip.none,
           children: [
@@ -72,7 +82,6 @@ class _AppNavBarState extends State<AppNavBar> {
           ],
         ),
         const SizedBox(width: 4),
-        // Avatar
         GestureDetector(
           onTap: () => Navigator.pushNamed(context, '/profile'),
           child: CircleAvatar(
@@ -94,12 +103,5 @@ class _AppNavBarState extends State<AppNavBar> {
         const SizedBox(width: 8),
       ],
     );
-  }
-
-  String _initials(String? name) {
-    if (name == null || name.isEmpty) return '?';
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    return parts[0][0].toUpperCase();
   }
 }

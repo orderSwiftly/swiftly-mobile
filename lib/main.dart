@@ -7,6 +7,7 @@ import 'package:swiftly_mobile/services/api_service.dart';
 import 'package:swiftly_mobile/screens/reset_password_screen.dart';
 import 'package:swiftly_mobile/screens/verify_email_screen.dart';
 import 'package:swiftly_mobile/screens/verify_otp_screen.dart';
+import 'package:swiftly_mobile/screens/profile_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -14,6 +15,7 @@ import 'screens/signup_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_wrapper.dart';
 import 'core/theme/app_colors.dart';
+import 'routes/app_routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,13 +44,11 @@ class _MyAppState extends ConsumerState<MyApp> {
   Future<void> _checkOnboardingStatus() async {
     try {
       final completed = await _apiService.isOnboardingCompleted();
-      print('Onboarding completed status: $completed');
       setState(() {
         _onboardingCompleted = completed;
         _isLoading = false;
       });
     } catch (e) {
-      print('Error checking onboarding: $e');
       setState(() {
         _onboardingCompleted = false;
         _isLoading = false;
@@ -59,10 +59,6 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-
-    print('Auth state status: ${authState.value?.status}');
-    print('Onboarding completed: $_onboardingCompleted');
-    print('Is loading: $_isLoading');
 
     return MaterialApp(
       title: 'Swiftly Mobile',
@@ -77,9 +73,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         '/onboarding': (context) => const OnboardingScreen(),
         '/signup': (context) => const SignupScreen(),
         '/login': (context) => const LoginScreen(),
-        '/verify-email': (context) =>
-            const VerifyEmailScreen(email: '', phone: ''),
-        '/verify-otp': (context) => const VerifyOtpScreen(email: ''),
+        '/profile': (context) => const ProfileScreen(),
         '/forgot-password': (context) => const ForgotPasswordScreen(),
       },
       onGenerateRoute: (settings) {
@@ -109,50 +103,25 @@ class _MyAppState extends ConsumerState<MyApp> {
                 ResetPasswordScreen(resetToken: args?['reset_token'] ?? ''),
           );
         }
-        return null;
+        return AppRoutes.onGenerateRoute(settings);
       },
     );
   }
 
   Widget _buildHomeScreen(AsyncValue<AuthState> authState) {
-    // Still loading onboarding status
-    if (_isLoading) {
-      print('Showing splash - still loading onboarding status');
-      return const SplashScreen();
-    }
+    if (_isLoading) return const SplashScreen();
 
-    // Use when() to handle auth states
     return authState.when(
-      loading: () {
-        print('Showing splash - auth loading');
-        return const SplashScreen();
-      },
+      loading: () => const SplashScreen(),
       error: (error, stackTrace) {
-        print('Auth error: $error');
-        // If onboarding not completed, show onboarding
-        if (_onboardingCompleted == false) {
-          print('Showing onboarding (auth error case)');
-          return const OnboardingScreen();
-        }
-        print('Showing login (auth error case)');
+        if (_onboardingCompleted == false) return const OnboardingScreen();
         return const LoginScreen();
       },
       data: (state) {
-        // CASE 1: User is authenticated - go to dashboard wrapper
         if (state.status == AuthStatus.authenticated && state.user != null) {
-          print('User is authenticated, showing MainWrapper');
           return const MainWrapper();
         }
-
-        // CASE 2: User not authenticated
-        // If onboarding not completed, show onboarding
-        if (_onboardingCompleted == false) {
-          print('Onboarding not completed, showing onboarding');
-          return const OnboardingScreen();
-        }
-
-        // CASE 3: Onboarding completed but not authenticated - show login
-        print('Onboarding completed but not authenticated, showing login');
+        if (_onboardingCompleted == false) return const OnboardingScreen();
         return const LoginScreen();
       },
     );

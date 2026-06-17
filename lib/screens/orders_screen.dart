@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../services/customer_order_service.dart';
-import 'customers/order_card.dart';
+import '../widgets/order_header.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -70,11 +70,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
           ),
         ),
       ),
-      body: _buildBody(isDesktop),
+      body: _buildBody(),
     );
   }
 
-  Widget _buildBody(bool isDesktop) {
+  Widget _buildBody() {
     if (_loading) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
@@ -88,10 +88,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
           children: [
             const Icon(Icons.wifi_off_outlined, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
-            Text(
-              _error!,
-              style: AppTypography.body.copyWith(color: Colors.grey),
-            ),
+            Text(_error!, style: AppTypography.body.copyWith(color: Colors.grey)),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => _fetchOrders(page: _currentPage),
@@ -108,16 +105,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
       );
     }
 
-    final orders = _result?.orders ?? [];
+    final result = _result;
 
-    if (orders.isEmpty) {
+    if (result == null || result.orders.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.receipt_outlined,
-              size: isDesktop ? 96 : 80,
+              size: 80,
               color: AppColors.textSecondary,
             ),
             const SizedBox(height: 16),
@@ -131,90 +128,22 @@ class _OrdersScreenState extends State<OrdersScreen> {
             const SizedBox(height: 8),
             Text(
               'Start shopping to see your orders',
-              style: AppTypography.body.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: AppTypography.body.copyWith(color: AppColors.textSecondary),
             ),
           ],
         ),
       );
     }
 
-    return Column(
-      children: [
-        Expanded(
-          child: RefreshIndicator(
-            color: AppColors.primary,
-            onRefresh: () => _fetchOrders(page: _currentPage),
-            child: ListView.builder(
-              padding: const EdgeInsets.only(top: 8, bottom: 16),
-              itemCount: orders.length,
-              itemBuilder: (_, i) => OrderCard(order: orders[i]),
-            ),
-          ),
-        ),
-        _PaginationBar(
-          currentPage: _currentPage,
-          totalPages: _result?.totalPages ?? 1,
-          hasNext: _result?.hasNext ?? false,
-          hasPrev: _result?.hasPrev ?? false,
-          onNext: () => _fetchOrders(page: _currentPage + 1),
-          onPrev: () => _fetchOrders(page: _currentPage - 1),
-        ),
-      ],
-    );
-  }
-}
-
-class _PaginationBar extends StatelessWidget {
-  final int currentPage;
-  final int totalPages;
-  final bool hasNext;
-  final bool hasPrev;
-  final VoidCallback onNext;
-  final VoidCallback onPrev;
-
-  const _PaginationBar({
-    required this.currentPage,
-    required this.totalPages,
-    required this.hasNext,
-    required this.hasPrev,
-    required this.onNext,
-    required this.onPrev,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.text,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          TextButton.icon(
-            onPressed: hasPrev ? onPrev : null,
-            icon: const Icon(Icons.chevron_left),
-            label: const Text('Prev'),
-            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-          ),
-          Text(
-            'Page $currentPage of $totalPages',
-            style: AppTypography.body.copyWith(
-              fontSize: 13,
-              color: Colors.grey,
-            ),
-          ),
-          TextButton.icon(
-            onPressed: hasNext ? onNext : null,
-            icon: const Icon(Icons.chevron_right),
-            label: const Text('Next'),
-            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-          ),
-        ],
-      ),
+    return OrderHeader(
+      orders: result.orders,
+      hasNext: result.hasNext,
+      hasPrev: result.hasPrev,
+      currentPage: _currentPage,
+      totalPages: result.totalPages,
+      onNext: () => _fetchOrders(page: _currentPage + 1),
+      onPrev: () => _fetchOrders(page: _currentPage - 1),
+      onRefresh: () => _fetchOrders(page: _currentPage),
     );
   }
 }

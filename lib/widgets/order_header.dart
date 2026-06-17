@@ -12,7 +12,7 @@ extension OrderTabExt on OrderTab {
   String get label => switch (this) {
     OrderTab.pending => 'Pending',
     OrderTab.active => 'Active',
-    OrderTab.passive => 'Past',
+    OrderTab.passive => 'Passive',
   };
 
   bool matches(String status) => switch (this) {
@@ -90,9 +90,9 @@ class _OrderHeaderState extends State<OrderHeader>
               fontWeight: FontWeight.w600,
             ),
             unselectedLabelStyle: AppTypography.body.copyWith(fontSize: 13),
-            labelColor: AppColors.primary,
+            labelColor: AppColors.accent,
             unselectedLabelColor: Colors.grey,
-            indicatorColor: AppColors.primary,
+            indicatorColor: AppColors.accent,
             indicatorWeight: 2.5,
             tabs: OrderTab.values.map((tab) {
               final count = _filtered(tab).length;
@@ -167,7 +167,7 @@ class _CountBubble extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.12),
+        color: AppColors.prof.withOpacity(0.12),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
@@ -175,7 +175,7 @@ class _CountBubble extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: AppColors.primary,
+          color: AppColors.waveClr,
         ),
       ),
     );

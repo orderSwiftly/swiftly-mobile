@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../services/store_order_service.dart';
+import '../../widgets/package_order_btn.dart';
 
 class StoreOrderScreen extends StatefulWidget {
   const StoreOrderScreen({super.key});
@@ -117,6 +118,11 @@ class _StoreOrderScreenState extends State<StoreOrderScreen>
     }
   }
 
+  void _refreshOrders() {
+    _fetchPaid(page: _paidPage);
+    _fetchPackaged(page: _packagedPage);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -141,7 +147,6 @@ class _StoreOrderScreenState extends State<StoreOrderScreen>
                       color: AppColors.primary,
                     ),
                   ),
-                  // Refresh both tabs
                   IconButton(
                     icon: const Icon(Icons.refresh, color: AppColors.primary),
                     onPressed: () {
@@ -216,11 +221,15 @@ class _StoreOrderScreenState extends State<StoreOrderScreen>
                   onPrev: () => _fetchPaid(page: _paidPage - 1),
                   orderCardBuilder: (order) => _StoreOrderCard(
                     order: order,
-                    actionLabel: 'Mark as Packaged',
-                    actionColor: AppColors.accent,
-                    onAction: () {
-                      // TODO: wire PATCH endpoint to mark packaged
-                    },
+                    actionBuilder: (orderItemId, itemName) =>
+                        PackageOrderButton(
+                          orderItemId: orderItemId,
+                          orderId: order.id,
+                          itemName: itemName,
+                          onSuccess: () {
+                            _refreshOrders();
+                          },
+                        ),
                   ),
                 ),
 
@@ -236,12 +245,8 @@ class _StoreOrderScreenState extends State<StoreOrderScreen>
                   onRefresh: () => _fetchPackaged(page: _packagedPage),
                   onNext: () => _fetchPackaged(page: _packagedPage + 1),
                   onPrev: () => _fetchPackaged(page: _packagedPage - 1),
-                  orderCardBuilder: (order) => _StoreOrderCard(
-                    order: order,
-                    actionLabel: null, // waiting for rider — no store action
-                    actionColor: null,
-                    onAction: null,
-                  ),
+                  orderCardBuilder: (order) =>
+                      _StoreOrderCard(order: order, actionBuilder: null),
                 ),
               ],
             ),
@@ -364,16 +369,9 @@ class _OrdersTab extends StatelessWidget {
 // ── Order card ──
 class _StoreOrderCard extends StatelessWidget {
   final StoreOrder order;
-  final String? actionLabel;
-  final Color? actionColor;
-  final VoidCallback? onAction;
+  final Widget Function(String orderItemId, String itemName)? actionBuilder;
 
-  const _StoreOrderCard({
-    required this.order,
-    required this.actionLabel,
-    required this.actionColor,
-    required this.onAction,
-  });
+  const _StoreOrderCard({required this.order, this.actionBuilder});
 
   @override
   Widget build(BuildContext context) {
@@ -421,77 +419,92 @@ class _StoreOrderCard extends StatelessWidget {
             const Divider(height: 1),
             const SizedBox(height: 10),
 
-            // ── Items ──
+            // ── Items with packaging status ──
             ...order.items.map(
               (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
                   children: [
-                    Container(
-                      width: 26,
-                      height: 26,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.accent.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '${item.quantity}x',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.accent,
+                    Row(
+                      children: [
+                        Container(
+                          width: 26,
+                          height: 26,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${item.quantity}x',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.accent,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            item.name,
+                            style: AppTypography.body.copyWith(fontSize: 14),
+                          ),
+                        ),
+                        if (item.isPackaged) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade100,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.check_circle,
+                                  size: 14,
+                                  color: Colors.green.shade700,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Packaged',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.green.shade700,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const SizedBox(width: 8),
+                        Text(
+                          '₦${(double.parse(item.price) * item.quantity).toStringAsFixed(2)}',
+                          style: AppTypography.body.copyWith(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        item.name,
-                        style: AppTypography.body.copyWith(fontSize: 14),
-                      ),
-                    ),
-                    Text(
-                      '₦${(double.parse(item.price) * item.quantity).toStringAsFixed(2)}',
-                      style: AppTypography.body.copyWith(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
+                    // ── Action button for each unpackaged item ──
+                    if (!item.isPackaged && actionBuilder != null) ...[
+                      const SizedBox(height: 6),
+                      actionBuilder!(item.id, item.name),
+                    ],
                   ],
                 ),
               ),
             ),
 
-            // ── Action button ──
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: onAction,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: actionColor,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                  ),
-                  child: Text(
-                    actionLabel!,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-
             // ── Packaged tab — waiting for rider note ──
-            if (actionLabel == null) ...[
+            if (actionBuilder == null &&
+                order.items.every((item) => item.isPackaged)) ...[
               const SizedBox(height: 12),
               Row(
                 children: [

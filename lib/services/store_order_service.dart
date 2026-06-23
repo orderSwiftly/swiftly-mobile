@@ -86,7 +86,7 @@ class StoreOrderService {
   // --------------------- Get Store Orders ---------------------
   Future<StoreOrdersResult?> getStoreOrders({
     required String storeId,
-    required String status, // 'PAID' or 'PACKAGED'
+    required String status,
     int page = 1,
     int limit = 10,
   }) async {
@@ -96,11 +96,13 @@ class StoreOrderService {
         queryParameters: {'status': status, 'page': '$page', 'limit': '$limit'},
       );
 
+      print('Fetching orders from: $uri');
       final response = await http.get(uri, headers: headers);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> body = jsonDecode(response.body);
         final pagination = body['pagination'] as Map<String, dynamic>;
+        print('Fetched store orders successfully: ${body['orders']}');
 
         return StoreOrdersResult(
           orders: (body['orders'] as List<dynamic>)
@@ -120,6 +122,48 @@ class StoreOrderService {
     } catch (e) {
       print('Error fetching store orders: $e');
       return null;
+    }
+  }
+
+  // --------------------- Mark Item as Packaged ---------------------
+  // --------------------- Mark Item as Packaged ---------------------
+  Future<bool> markItemAsPackaged(String orderItemId) async {
+    try {
+      final headers = await _authHeaders();
+      final uri = Uri.parse('$baseUrl/v2/orders/items/$orderItemId/packaged');
+
+      print('Making PATCH request to: $uri');
+      print('Order Item ID: $orderItemId');
+
+      // Try with empty body first
+      var response = await http.patch(uri, headers: headers);
+      print('Attempt 1 - Empty body: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return true;
+      }
+
+      // Try with JSON body
+      if (response.statusCode == 500) {
+        print('Attempt 2 - With JSON body');
+        response = await http.patch(
+          uri,
+          headers: headers,
+          body: jsonEncode({'is_packaged': true}),
+        );
+        print('Attempt 2 - Response: ${response.statusCode}');
+
+        if (response.statusCode == 200) {
+          return true;
+        }
+      }
+
+      print('All attempts failed. Final status: ${response.statusCode}');
+      print('Final response: ${response.body}');
+      return false;
+    } catch (e) {
+      print('Error marking item as packaged: $e');
+      return false;
     }
   }
 }

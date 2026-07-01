@@ -12,6 +12,9 @@ import 'profile_screen.dart';
 import 'rider_dashboard_screen.dart';
 import 'store_owner_dashboard_screen.dart';
 import 'store_owner/selecting_stores_screen.dart';
+import 'store_owner/store_profile.dart';
+import 'store_owner/store_order.dart'; 
+import 'riders/rider_delivery_screen.dart';
 
 enum UserRole { customer, rider, storeOwner }
 
@@ -71,16 +74,18 @@ class _MainWrapperState extends State<MainWrapper> {
       case UserRole.rider:
         return [
           const RiderDashboardScreen(),
-          const PlaceholderScreen(title: 'Deliveries'),
+          const RiderDeliveryScreen(),
           const PlaceholderScreen(title: 'Earnings'),
-          const ProfileScreen(),
+          const PlaceholderScreen(title: 'Profile'), // rider profile
         ];
       case UserRole.storeOwner:
         return [
           const StoreOwnerDashboardScreen(),
           const PlaceholderScreen(title: 'Products'),
-          const PlaceholderScreen(title: 'Orders'),
-          const ProfileScreen(),
+          const StoreOrderScreen(),
+          StoreProfileScreen(
+            onOrdersTap: () => setState(() => _selectedIndex = 2),
+          ), // store profile
         ];
       case UserRole.customer:
       default:

@@ -92,7 +92,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: AppColors.accent.withOpacity(0.1),
+                              color: AppColors.accent.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -165,7 +165,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: AppColors.secondary.withOpacity(0.5),
+                                  color: AppColors.secondary.withValues(alpha: 0.5),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -260,7 +260,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: AppColors.secondary.withOpacity(0.5),
+                                  color: AppColors.secondary.withValues(alpha: 0.5),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -314,7 +314,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 elevation: 0,
                                 shape: const StadiumBorder(),
                                 disabledBackgroundColor: AppColors.accent
-                                    .withOpacity(0.7),
+                                    .withValues(alpha: 0.7),
                               ),
                               child: _isLoading
                                   ? const CustomLoader(

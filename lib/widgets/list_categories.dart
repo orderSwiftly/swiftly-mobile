@@ -104,7 +104,7 @@ class _ListCategoriesState extends State<ListCategories> {
         side: BorderSide(
           color: isSelected
               ? Colors.transparent
-              : AppColors.accent.withOpacity(0.3),
+              : AppColors.accent.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -200,7 +200,7 @@ class _ListCategoriesState extends State<ListCategories> {
               padding: const EdgeInsets.only(right: 8),
               child: _buildCategoryChip(category, _getCategoryIcon(category)),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

@@ -237,7 +237,7 @@ class _FetchCartState extends State<FetchCart> {
       decoration: BoxDecoration(
         color: AppColors.text,
         border: Border(
-          bottom: BorderSide(color: AppColors.textHint.withOpacity(0.2)),
+          bottom: BorderSide(color: AppColors.textHint.withValues(alpha: 0.2)),
         ),
       ),
       child: Row(
@@ -346,10 +346,10 @@ class _FetchCartState extends State<FetchCart> {
       decoration: BoxDecoration(
         color: AppColors.text,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.textHint.withOpacity(0.2)),
+        border: Border.all(color: AppColors.textHint.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -362,7 +362,7 @@ class _FetchCartState extends State<FetchCart> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.prof.withOpacity(0.08),
+              color: AppColors.prof.withValues(alpha: 0.08),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(16),
               ),
@@ -387,7 +387,7 @@ class _FetchCartState extends State<FetchCart> {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.prof.withOpacity(0.15),
+                    color: AppColors.prof.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -420,7 +420,7 @@ class _FetchCartState extends State<FetchCart> {
             Container(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               decoration: BoxDecoration(
-                color: AppColors.textHint.withOpacity(0.05),
+                color: AppColors.textHint.withValues(alpha: 0.05),
                 borderRadius: const BorderRadius.vertical(
                   bottom: Radius.circular(16),
                 ),
@@ -493,7 +493,7 @@ class _FetchCartState extends State<FetchCart> {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: AppColors.textHint.withOpacity(0.15)),
+          side: BorderSide(color: AppColors.textHint.withValues(alpha: 0.15)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -507,7 +507,7 @@ class _FetchCartState extends State<FetchCart> {
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: AppColors.textHint.withOpacity(0.1),
+                      color: AppColors.textHint.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: imageUrl != null
@@ -516,7 +516,7 @@ class _FetchCartState extends State<FetchCart> {
                             child: Image.network(
                               imageUrl,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Icon(
+                              errorBuilder: (_, _, _) => Icon(
                                 Icons.inventory_2_outlined,
                                 color: AppColors.textSecondary,
                                 size: 28,
@@ -627,7 +627,7 @@ class _FetchCartState extends State<FetchCart> {
                     child: Container(
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: AppColors.textHint.withOpacity(0.3),
+                          color: AppColors.textHint.withValues(alpha: 0.3),
                         ),
                         borderRadius: BorderRadius.circular(20),
                       ),

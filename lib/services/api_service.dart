@@ -177,15 +177,9 @@ class ApiService {
         String? token = response.headers['authorization'];
 
         // If not in 'authorization', check other common formats
-        if (token == null) {
-          token = response.headers['Authorization'];
-        }
-        if (token == null) {
-          token = response.headers['x-auth-token'];
-        }
-        if (token == null) {
-          token = response.headers['X-Auth-Token'];
-        }
+        token ??= response.headers['Authorization'];
+        token ??= response.headers['x-auth-token'];
+        token ??= response.headers['X-Auth-Token'];
 
         // Remove 'Bearer ' prefix if present
         if (token != null && token.startsWith('Bearer ')) {

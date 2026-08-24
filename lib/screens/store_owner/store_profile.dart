@@ -84,8 +84,9 @@ class _StoreProfileScreenState extends ConsumerState<StoreProfileScreen> {
   }
 
   Map<String, dynamic>? get _activeStore {
-    if (_activeStoreId == null)
+    if (_activeStoreId == null) {
       return _stores.isNotEmpty ? _stores.first : null;
+    }
     return _stores.firstWhere(
       (s) => s['store_id'] == _activeStoreId,
       orElse: () => _stores.isNotEmpty ? _stores.first : {},
@@ -187,7 +188,7 @@ class _StoreProfileScreenState extends ConsumerState<StoreProfileScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                     side: BorderSide(
-                      color: AppColors.secondary.withOpacity(0.2),
+                      color: AppColors.secondary.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Padding(
@@ -239,7 +240,7 @@ class _StoreProfileScreenState extends ConsumerState<StoreProfileScreen> {
                             ),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: AppColors.textError.withOpacity(0.4),
+                                color: AppColors.textError.withValues(alpha: 0.4),
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -498,7 +499,7 @@ class _StoreProfileScreenState extends ConsumerState<StoreProfileScreen> {
           trailing: Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.accent,
+            activeThumbColor: AppColors.accent,
           ),
           onTap: () => onChanged(!value),
         ),
@@ -536,9 +537,9 @@ class _ActiveStoreBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.accent.withOpacity(0.07),
+        color: AppColors.accent.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.accent.withOpacity(0.3)),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -546,7 +547,7 @@ class _ActiveStoreBanner extends StatelessWidget {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: AppColors.accent.withOpacity(0.12),
+              color: AppColors.accent.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: storePicture != null
@@ -633,7 +634,7 @@ class _ActiveStoreBanner extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.12),
+                  color: AppColors.accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -682,7 +683,7 @@ class _StoreCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -692,7 +693,7 @@ class _StoreCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: AppColors.accent.withOpacity(0.12),
+            backgroundColor: AppColors.accent.withValues(alpha: 0.12),
             backgroundImage: storePicture != null
                 ? NetworkImage(storePicture)
                 : null,
@@ -773,7 +774,7 @@ class _AvatarCircle extends StatelessWidget {
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: radius,
-      backgroundColor: AppColors.accent.withOpacity(0.15),
+      backgroundColor: AppColors.accent.withValues(alpha: 0.15),
       backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
       child: avatarUrl == null
           ? Text(

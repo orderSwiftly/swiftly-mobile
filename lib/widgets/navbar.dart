@@ -86,7 +86,7 @@ class _AppNavBarState extends State<AppNavBar> {
           onTap: () => Navigator.pushNamed(context, '/profile'),
           child: CircleAvatar(
             radius: 18,
-            backgroundColor: AppColors.secondary.withOpacity(0.2),
+            backgroundColor: AppColors.secondary.withValues(alpha: 0.2),
             backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
             child: avatarUrl == null
                 ? Text(

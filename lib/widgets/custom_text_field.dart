@@ -36,18 +36,18 @@ class CustomTextField extends StatelessWidget {
           labelText: label,
           hintText: hint,
           labelStyle: TextStyle(color: AppColors.secondary),
-          hintStyle: TextStyle(color: AppColors.secondary.withOpacity(0.7)),
+          hintStyle: TextStyle(color: AppColors.secondary.withValues(alpha: 0.7)),
           floatingLabelStyle: TextStyle(color: AppColors.accent),
           suffixIcon: suffixIcon,
           filled: true,
-          fillColor: AppColors.text.withOpacity(0.9),
+          fillColor: AppColors.text.withValues(alpha: 0.9),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: AppColors.secondary),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: AppColors.secondary.withOpacity(0.5)),
+            borderSide: BorderSide(color: AppColors.secondary.withValues(alpha: 0.5)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

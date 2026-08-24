@@ -156,7 +156,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: AppColors.accent.withOpacity(0.1),
+                            color: AppColors.accent.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -215,7 +215,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                             inactiveFillColor: Colors.white,
                             selectedFillColor: Colors.white,
                             activeColor: AppColors.accent,
-                            inactiveColor: AppColors.secondary.withOpacity(0.5),
+                            inactiveColor: AppColors.secondary.withValues(alpha: 0.5),
                             selectedColor: AppColors.accent,
                           ),
                           keyboardType: TextInputType.number,
@@ -237,7 +237,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                               elevation: 0,
                               shape: const StadiumBorder(),
                               disabledBackgroundColor: AppColors.accent
-                                  .withOpacity(0.7),
+                                  .withValues(alpha: 0.7),
                             ),
                             child: _isLoading
                                 ? const CustomLoader(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:swiftly_mobile/core/theme/app_typography.dart';
 import 'onboarding_screen.dart';
 import '../core/theme/app_colors.dart';
 

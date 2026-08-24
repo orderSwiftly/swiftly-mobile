@@ -47,8 +47,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (_profile == null) return 'User';
     final firstName = _profile?['first_name'] ?? '';
     final lastName = _profile?['last_name'] ?? '';
-    if (firstName.isNotEmpty && lastName.isNotEmpty)
+    if (firstName.isNotEmpty && lastName.isNotEmpty) {
       return '$firstName $lastName';
+    }
     if (firstName.isNotEmpty) return firstName;
     if (lastName.isNotEmpty) return lastName;
     return 'User';
@@ -147,7 +148,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                     side: BorderSide(
-                      color: AppColors.secondary.withOpacity(0.2),
+                      color: AppColors.secondary.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Padding(
@@ -158,7 +159,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         // Avatar circle
                         CircleAvatar(
                           radius: 48,
-                          backgroundColor: AppColors.accent.withOpacity(0.15),
+                          backgroundColor: AppColors.accent.withValues(alpha: 0.15),
                           backgroundImage: getAvatarUrl() != null
                               ? NetworkImage(getAvatarUrl()!)
                               : null,
@@ -222,7 +223,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: AppColors.textError.withOpacity(0.4),
+                                color: AppColors.textError.withValues(alpha: 0.4),
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -421,7 +422,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           trailing: Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.accent,
+            activeThumbColor: AppColors.accent,
           ),
           onTap: () => onChanged(!value),
         ),

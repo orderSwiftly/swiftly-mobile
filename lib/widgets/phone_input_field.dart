@@ -23,7 +23,7 @@ class PhoneInputField extends StatelessWidget {
         // Country Code Picker
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.secondary.withOpacity(0.5)),
+            border: Border.all(color: AppColors.secondary.withValues(alpha: 0.5)),
             borderRadius: BorderRadius.circular(12),
           ),
           child: CountryCodePicker(
@@ -65,7 +65,7 @@ class PhoneInputField extends StatelessWidget {
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: AppColors.secondary.withOpacity(0.5),
+                  color: AppColors.secondary.withValues(alpha: 0.5),
                 ),
               ),
               focusedBorder: OutlineInputBorder(

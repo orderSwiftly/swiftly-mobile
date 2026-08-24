@@ -476,7 +476,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
             color: AppColors.text,
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
                 spreadRadius: 2,
                 blurRadius: 5,
                 offset: const Offset(0, -2),
@@ -557,8 +557,7 @@ class PaymentWebView extends StatefulWidget {
   final String payment_link;
   final String? order_id;
 
-  const PaymentWebView({Key? key, required this.payment_link, this.order_id})
-    : super(key: key);
+  const PaymentWebView({super.key, required this.payment_link, this.order_id});
 
   @override
   State<PaymentWebView> createState() => _PaymentWebViewState();

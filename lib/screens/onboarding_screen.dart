@@ -200,7 +200,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         borderRadius: BorderRadius.circular(4),
                         color: _currentPage == index
                             ? AppColors.accent
-                            : AppColors.secondary.withOpacity(0.4),
+                            : AppColors.secondary.withValues(alpha: 0.4),
                       ),
                     ),
                   ),
@@ -372,7 +372,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       borderRadius: BorderRadius.circular(4),
                       color: _currentPage == index
                           ? AppColors.accent
-                          : AppColors.secondary.withOpacity(0.4),
+                          : AppColors.secondary.withValues(alpha: 0.4),
                     ),
                   ),
                 ),

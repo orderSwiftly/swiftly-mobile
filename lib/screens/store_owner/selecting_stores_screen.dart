@@ -70,7 +70,7 @@ class _SelectingStoresScreenState extends State<SelectingStoresScreen> {
               Expanded(
                 child: ListView.separated(
                   itemCount: widget.stores.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final store = widget.stores[index];
                     final storeId = store['store_id'] as String;
@@ -98,13 +98,13 @@ class _SelectingStoresScreenState extends State<SelectingStoresScreen> {
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? AppColors.accent.withOpacity(0.08)
+                              ? AppColors.accent.withValues(alpha: 0.08)
                               : AppColors.text,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
                             color: isSelected
                                 ? AppColors.accent
-                                : AppColors.textHint.withOpacity(0.4),
+                                : AppColors.textHint.withValues(alpha: 0.4),
                             width: isSelected ? 2 : 1,
                           ),
                         ),
@@ -115,7 +115,7 @@ class _SelectingStoresScreenState extends State<SelectingStoresScreen> {
                               width: 52,
                               height: 52,
                               decoration: BoxDecoration(
-                                color: AppColors.accent.withOpacity(0.12),
+                                color: AppColors.accent.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child:
@@ -169,8 +169,8 @@ class _SelectingStoresScreenState extends State<SelectingStoresScreen> {
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.accent.withOpacity(
-                                          0.1,
+                                        color: AppColors.accent.withValues(
+                                          alpha: 0.1,
                                         ),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
@@ -226,7 +226,7 @@ class _SelectingStoresScreenState extends State<SelectingStoresScreen> {
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: const StadiumBorder(),
-                    disabledBackgroundColor: AppColors.accent.withOpacity(0.4),
+                    disabledBackgroundColor: AppColors.accent.withValues(alpha: 0.4),
                   ),
                   child: _isSaving
                       ? const SizedBox(

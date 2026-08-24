@@ -304,7 +304,7 @@ class _DesktopSidebar extends StatelessWidget {
                 'assets/images/swiftly-txt.png',
                 width: 140,
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Text(
+                errorBuilder: (_, _, _) => const Text(
                   'Swiftly',
                   style: TextStyle(
                     color: Colors.white,
@@ -359,7 +359,7 @@ class _SidebarNavTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       decoration: BoxDecoration(
-        color: isActive ? Colors.white.withOpacity(0.15) : Colors.transparent,
+        color: isActive ? Colors.white.withValues(alpha: 0.15) : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
       ),
       child: ListTile(

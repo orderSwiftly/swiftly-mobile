@@ -40,7 +40,7 @@ class ProductCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.text,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.textHint.withOpacity(0.2)),
+          border: Border.all(color: AppColors.textHint.withValues(alpha: 0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,7 +53,7 @@ class ProductCard extends StatelessWidget {
                   height: isMobile ? 80 : 100,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: AppColors.textHint.withOpacity(0.1),
+                    color: AppColors.textHint.withValues(alpha: 0.1),
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(12),
                     ),
@@ -155,7 +155,7 @@ class ProductCard extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.textHint.withOpacity(0.1),
+                          color: AppColors.textHint.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -217,7 +217,7 @@ class ProductCard extends StatelessWidget {
                   // Divider
                   Divider(
                     height: 1,
-                    color: AppColors.textHint.withOpacity(0.2),
+                    color: AppColors.textHint.withValues(alpha: 0.2),
                   ),
 
                   const SizedBox(height: 8),

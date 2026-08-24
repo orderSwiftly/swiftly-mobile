@@ -201,7 +201,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 elevation: 0,
                                 shape: const StadiumBorder(),
                                 disabledBackgroundColor: AppColors.accent
-                                    .withOpacity(0.7),
+                                    .withValues(alpha: 0.7),
                               ),
                               child: _isLoading
                                   ? const CustomLoader(

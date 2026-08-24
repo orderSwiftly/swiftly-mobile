@@ -63,7 +63,7 @@ class AppNavigation extends StatelessWidget {
         color: AppColors.text,
         boxShadow: [
           BoxShadow(
-            color: AppColors.textSecondary.withOpacity(0.6),
+            color: AppColors.textSecondary.withValues(alpha: 0.6),
             blurRadius: 10,
             offset: const Offset(0, 0),
           ),
@@ -78,7 +78,7 @@ class AppNavigation extends StatelessWidget {
               style: AppTypography.headline.copyWith(color: AppColors.accent),
             ),
           ),
-          Divider(height: 1, color: AppColors.textHint.withOpacity(0.3)),
+          Divider(height: 1, color: AppColors.textHint.withValues(alpha: 0.3)),
           Expanded(
             child: Column(
               children: List.generate(
@@ -110,7 +110,7 @@ class AppNavigation extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.accent.withOpacity(0.15)
+              ? AppColors.accent.withValues(alpha: 0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),

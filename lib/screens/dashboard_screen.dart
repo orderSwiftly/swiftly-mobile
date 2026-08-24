@@ -211,7 +211,7 @@ class _DashboardHeader extends StatelessWidget {
                   child: Image.asset(
                     'assets/images/babcock.png',
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    errorBuilder: (_, _, _) => Container(
                       color: AppColors.secondary,
                       alignment: Alignment.center,
                       child: Text(

@@ -460,7 +460,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.prof.withOpacity(0.1),
+                color: AppColors.prof.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -726,7 +726,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             color: AppColors.text,
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
                 spreadRadius: 2,
                 blurRadius: 5,
                 offset: const Offset(0, -2),
@@ -801,10 +801,10 @@ class PaymentWebView extends StatefulWidget {
   final String tx_reference;
 
   const PaymentWebView({
-    Key? key,
+    super.key,
     required this.payment_link,
     required this.tx_reference,
-  }) : super(key: key);
+  });
 
   @override
   State<PaymentWebView> createState() => _PaymentWebViewState();

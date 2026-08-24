@@ -415,7 +415,7 @@ class _RiderDeliveryScreenState extends State<RiderDeliveryScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -443,7 +443,7 @@ class _RiderDeliveryScreenState extends State<RiderDeliveryScreen>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: getStatusColor().withOpacity(0.1),
+                    color: getStatusColor().withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -470,7 +470,7 @@ class _RiderDeliveryScreenState extends State<RiderDeliveryScreen>
                       height: 20,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withOpacity(0.1),
+                        color: AppColors.accent.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(

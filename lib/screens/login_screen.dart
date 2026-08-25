@@ -54,6 +54,10 @@ class _LoginScreenState extends State<LoginScreen> {
         if (mounted) {
           // ApiService already saved token and role to secure storage
           // So we just need the role for navigation
+
+          print('Full response keys: ${response.keys}');
+          print('Role value: ${response['role']} (${response['role'].runtimeType})');
+          
           final userRoleString = response['role'] as String;
 
           // Get token from secure storage (already saved by ApiService)

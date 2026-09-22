@@ -253,7 +253,7 @@ class _ListStaffScreenState extends State<ListStaffScreen>
       child: ListView.separated(
         padding: const EdgeInsets.all(20),
         itemCount: staffList.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           return _StaffCard(
             staff: staffList[index],

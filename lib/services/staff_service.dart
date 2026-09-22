@@ -1,6 +1,4 @@
 // services/staff_service.dart
-
-// services/staff_service.dart
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -36,8 +34,8 @@ class StaffService {
         'status': status,
         'page': page.toString(),
         'limit': limit.toString(),
-        if (roleId != null) 'role_id': roleId,
-        if (staffId != null) 'staff_id': staffId,
+        'role_id': ?roleId,
+        'staff_id': ?staffId,
       };
 
       final uri = Uri.parse(
@@ -236,7 +234,7 @@ class StaffService {
       final queryParams = {
         'page': page.toString(),
         'limit': limit.toString(),
-        if (roleId != null) 'role_id': roleId,
+        'role_id': ?roleId,
         if (showStaff) 'show_staff': 'true',
       };
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // Add this
+// Add this
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../services/api_service.dart'; // Add this

@@ -8,6 +8,7 @@ import '../../core/theme/app_typography.dart';
 import '../../services/profile_service.dart';
 import '../../providers/auth_provider.dart';
 import 'selecting_stores_screen.dart';
+import '../../screens/staff/staff_screen.dart';
 
 class StoreProfileScreen extends ConsumerStatefulWidget {
   final VoidCallback? onOrdersTap;
@@ -299,10 +300,26 @@ class _StoreProfileScreenState extends ConsumerState<StoreProfileScreen> {
                         color: AppColors.primary,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    // const SizedBox(height: 8),
+                    // _buildMenuItem(
+                    //   title: 'My Orders',
+                    //   onTap: () => widget.onOrdersTap?.call(),
+                    // ),
+
+                    const SizedBox(height: 24),
+
                     _buildMenuItem(
                       title: 'My Orders',
                       onTap: () => widget.onOrdersTap?.call(),
+                    ),
+                    _buildMenuItem(
+                      title: 'Manage Staff',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StaffScreen(storeId: _activeStoreId),
+                        ),
+                      ),
                     ),
 
                     const SizedBox(height: 24),
@@ -415,10 +432,26 @@ class _StoreProfileScreenState extends ConsumerState<StoreProfileScreen> {
             color: AppColors.primary,
           ),
         ),
-        const SizedBox(height: 8),
+        // const SizedBox(height: 8),
+        // _buildMenuItem(
+        //   title: 'My Orders',
+        //   onTap: () => widget.onOrdersTap?.call(),
+        // ),
+
+        const SizedBox(height: 24),
+
         _buildMenuItem(
           title: 'My Orders',
           onTap: () => widget.onOrdersTap?.call(),
+        ),
+        _buildMenuItem(
+          title: 'Manage Staff',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => StaffScreen(storeId: _activeStoreId),
+            ),
+          ),
         ),
 
         const SizedBox(height: 24),

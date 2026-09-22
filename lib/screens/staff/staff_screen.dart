@@ -3,10 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../widgets/list_staff.dart';
-import '../../widgets/invite_staff.dart';
 
 class StaffScreen extends StatefulWidget {
-  const StaffScreen({super.key});
+  final String? storeId;
+
+  const StaffScreen({super.key, this.storeId});
 
   @override
   State<StaffScreen> createState() => _StaffScreenState();
@@ -22,7 +23,14 @@ class _StaffScreenState extends State<StaffScreen> {
   @override
   void initState() {
     super.initState();
-    _resolveStoreId();
+    if (widget.storeId != null && widget.storeId!.isNotEmpty) {
+      // Caller already knows the active store (e.g. store owner's profile
+      // screen) — skip the storage round-trip entirely.
+      _storeId = widget.storeId;
+      _loading = false;
+    } else {
+      _resolveStoreId();
+    }
   }
 
   Future<void> _resolveStoreId() async {
@@ -31,9 +39,10 @@ class _StaffScreenState extends State<StaffScreen> {
       _error = null;
     });
 
-    // store_id is saved as part of the staff profile / user data blob
-    // after login (see 'user_data' key in ApiService) — read it back out
-    // here rather than re-fetching the profile every time this screen opens.
+    // Fallback path: store_id is saved as part of the staff profile / user
+    // data blob after login (see 'user_data' key in ApiService) — read it
+    // back out here rather than re-fetching the profile every time this
+    // screen opens. Only hit when no storeId was passed in directly.
     final storeId = await _storage.read(key: 'store_id');
 
     if (!mounted) return;

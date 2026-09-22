@@ -7,6 +7,8 @@ import '../../services/staff_service.dart';
 import '../../utils/validators.dart';
 import '../widgets/custom_loader.dart';
 import 'invite_staff.dart';
+import 'suspend_staff.dart';
+import 'dismiss_staff.dart';
 
 class ListStaffScreen extends StatefulWidget {
   final String storeId;
@@ -34,6 +36,12 @@ class _ListStaffScreenState extends State<ListStaffScreen>
     'SUSPENDED': true,
     'DISMISSED': true,
   };
+
+  // Staff IDs with a suspend/reinstate/dismiss request currently in
+  // flight. Only set once a confirmation dialog has been accepted and
+  // the actual API call is about to fire — never while a dialog is
+  // still open and the owner is deciding.
+  final Set<String> _pendingActionStaffIds = {};
 
   @override
   void initState() {
@@ -77,6 +85,10 @@ class _ListStaffScreenState extends State<ListStaffScreen>
   }
 
   Future<void> _handleSuspend(Staff staff) async {
+    final confirmed = await showSuspendStaffDialog(context, staff);
+    if (confirmed != true) return;
+
+    setState(() => _pendingActionStaffIds.add(staff.staffId));
     try {
       await _staffService.suspendStaff(
         storeId: widget.storeId,
@@ -88,10 +100,15 @@ class _ListStaffScreenState extends State<ListStaffScreen>
       }
     } catch (e) {
       if (mounted) Validators.showErrorSnackBar(context, e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _pendingActionStaffIds.remove(staff.staffId));
+      }
     }
   }
 
   Future<void> _handleReinstate(Staff staff) async {
+    setState(() => _pendingActionStaffIds.add(staff.staffId));
     try {
       await _staffService.reinstateStaff(
         storeId: widget.storeId,
@@ -103,13 +120,18 @@ class _ListStaffScreenState extends State<ListStaffScreen>
       }
     } catch (e) {
       if (mounted) Validators.showErrorSnackBar(context, e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _pendingActionStaffIds.remove(staff.staffId));
+      }
     }
   }
 
   Future<void> _handleDismiss(Staff staff, String staffEmail) async {
-    final confirmed = await _showDismissConfirmation(staff, staffEmail);
+    final confirmed = await showDismissStaffDialog(context, staff, staffEmail);
     if (confirmed != true) return;
 
+    setState(() => _pendingActionStaffIds.add(staff.staffId));
     try {
       await _staffService.dismissStaff(
         storeId: widget.storeId,
@@ -121,65 +143,11 @@ class _ListStaffScreenState extends State<ListStaffScreen>
       }
     } catch (e) {
       if (mounted) Validators.showErrorSnackBar(context, e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _pendingActionStaffIds.remove(staff.staffId));
+      }
     }
-  }
-
-  Future<bool?> _showDismissConfirmation(Staff staff, String staffEmail) {
-    final confirmController = TextEditingController();
-    return showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            final matches =
-                confirmController.text.trim().toLowerCase() ==
-                staffEmail.trim().toLowerCase();
-
-            return AlertDialog(
-              title: const Text('Dismiss Staff'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'This is permanent. ${staff.fullName} will lose access '
-                    'immediately and cannot be undismissed — they would need '
-                    'to be invited again as a new staff member.',
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Type "$staffEmail" to confirm:',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: confirmController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    onChanged: (_) => setDialogState(() {}),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: matches
-                      ? () => Navigator.pop(context, true)
-                      : null,
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  child: const Text('Dismiss'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
   }
 
   @override
@@ -255,16 +223,18 @@ class _ListStaffScreenState extends State<ListStaffScreen>
         itemCount: staffList.length,
         separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
+          final staff = staffList[index];
+          final isProcessing = _pendingActionStaffIds.contains(staff.staffId);
+
           return _StaffCard(
-            staff: staffList[index],
-            onSuspend: status == 'ACTIVE'
-                ? () => _handleSuspend(staffList[index])
-                : null,
+            staff: staff,
+            isProcessing: isProcessing,
+            onSuspend: status == 'ACTIVE' ? () => _handleSuspend(staff) : null,
             onReinstate: status == 'SUSPENDED'
-                ? () => _handleReinstate(staffList[index])
+                ? () => _handleReinstate(staff)
                 : null,
             onDismiss: status != 'DISMISSED'
-                ? (email) => _handleDismiss(staffList[index], email)
+                ? (email) => _handleDismiss(staff, email)
                 : null,
           );
         },
@@ -275,12 +245,14 @@ class _ListStaffScreenState extends State<ListStaffScreen>
 
 class _StaffCard extends StatelessWidget {
   final Staff staff;
+  final bool isProcessing;
   final VoidCallback? onSuspend;
   final VoidCallback? onReinstate;
   final void Function(String email)? onDismiss;
 
   const _StaffCard({
     required this.staff,
+    this.isProcessing = false,
     this.onSuspend,
     this.onReinstate,
     this.onDismiss,
@@ -288,89 +260,101 @@ class _StaffCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: AppColors.accent.withValues(alpha: 0.15),
-                child: Text(
-                  staff.firstName.isNotEmpty
-                      ? staff.firstName[0].toUpperCase()
-                      : '?',
-                  style: TextStyle(
-                    color: AppColors.accent,
-                    fontWeight: FontWeight.bold,
+    return Opacity(
+      opacity: isProcessing ? 0.6 : 1,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: AppColors.accent.withValues(alpha: 0.15),
+                  child: Text(
+                    staff.firstName.isNotEmpty
+                        ? staff.firstName[0].toUpperCase()
+                        : '?',
+                    style: TextStyle(
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        staff.fullName,
+                        style: AppTypography.body.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        staff.roleName ?? 'No role assigned',
+                        style: AppTypography.body.copyWith(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _StatusBadge(status: staff.status),
+              ],
+            ),
+            if (staff.suspendedAt != null || staff.dismissedAt != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                staff.suspendedAt != null
+                    ? 'Suspended: ${staff.suspendedAt}'
+                    : 'Dismissed: ${staff.dismissedAt}',
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+            if (onSuspend != null || onReinstate != null || onDismiss != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Text(
-                      staff.fullName,
-                      style: AppTypography.body.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      staff.roleName ?? 'No role assigned',
-                      style: AppTypography.body.copyWith(
-                        color: AppColors.textSecondary,
-                        fontSize: 13,
-                      ),
-                    ),
+                    if (isProcessing)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        child: CustomLoader(size: 18, strokeWidth: 2),
+                      )
+                    else ...[
+                      if (onSuspend != null)
+                        TextButton(
+                          onPressed: onSuspend,
+                          child: const Text('Suspend'),
+                        ),
+                      if (onReinstate != null)
+                        TextButton(
+                          onPressed: onReinstate,
+                          child: const Text('Reinstate'),
+                        ),
+                      if (onDismiss != null)
+                        TextButton(
+                          onPressed: () => onDismiss!(_staffEmailPlaceholder),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.red,
+                          ),
+                          child: const Text('Dismiss'),
+                        ),
+                    ],
                   ],
                 ),
               ),
-              _StatusBadge(status: staff.status),
-            ],
-          ),
-          if (staff.suspendedAt != null || staff.dismissedAt != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              staff.suspendedAt != null
-                  ? 'Suspended: ${staff.suspendedAt}'
-                  : 'Dismissed: ${staff.dismissedAt}',
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
-            ),
           ],
-          if (onSuspend != null || onReinstate != null || onDismiss != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (onSuspend != null)
-                    TextButton(
-                      onPressed: onSuspend,
-                      child: const Text('Suspend'),
-                    ),
-                  if (onReinstate != null)
-                    TextButton(
-                      onPressed: onReinstate,
-                      child: const Text('Reinstate'),
-                    ),
-                  if (onDismiss != null)
-                    TextButton(
-                      onPressed: () => onDismiss!(_staffEmailPlaceholder),
-                      style: TextButton.styleFrom(foregroundColor: Colors.red),
-                      child: const Text('Dismiss'),
-                    ),
-                ],
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }

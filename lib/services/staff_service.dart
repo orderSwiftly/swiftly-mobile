@@ -144,9 +144,19 @@ class StaffService {
     required String staffId,
   }) async {
     try {
-      final url = Uri.parse('$baseUrl/v2/store/$storeId/staff/$staffId/suspend');
+      final url = Uri.parse(
+        '$baseUrl/v2/store/$storeId/staff/$staffId/suspend',
+      );
+      final headers = await _authHeaders();
 
-      final response = await http.patch(url, headers: await _authHeaders());
+      print('========== SUSPEND STAFF REQUEST ==========');
+      print('URL: $url');
+      print('storeId: "$storeId"');
+      print('staffId: "$staffId"');
+      print('headers: $headers');
+      print('=============================================');
+
+      final response = await http.patch(url, headers: headers);
 
       print('Suspend staff response status: ${response.statusCode}');
       print('Suspend staff response body: ${response.body}');
@@ -164,7 +174,6 @@ class StaffService {
       throw Exception('Network error: $e');
     }
   }
-
   // --------------------- Reinstate Staff ---------------------
   Future<bool> reinstateStaff({
     required String storeId,

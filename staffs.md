@@ -102,7 +102,6 @@ You'll also get standard validation errors (missing fields, bad email format, du
 ## Managing Staff Status
 
 There are three actions: suspend, reinstate, and dismiss. Think of them like this:
-
 **Suspend** — `PATCH /store/:store_id/staff/:staff_id/suspend`
 
 Use this when a staff member has done something wrong and the store wants to temporarily send them away without fully cutting ties. It's reversible. No body needed, just hit the endpoint.

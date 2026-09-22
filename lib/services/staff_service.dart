@@ -1,6 +1,4 @@
 // services/staff_service.dart
-
-// services/staff_service.dart
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -36,8 +34,8 @@ class StaffService {
         'status': status,
         'page': page.toString(),
         'limit': limit.toString(),
-        if (roleId != null) 'role_id': roleId,
-        if (staffId != null) 'staff_id': staffId,
+        'role_id': ?roleId,
+        'staff_id': ?staffId,
       };
 
       final uri = Uri.parse(
@@ -146,9 +144,19 @@ class StaffService {
     required String staffId,
   }) async {
     try {
-      final url = Uri.parse('$baseUrl/v2/store/$storeId/staff/$staffId/suspend');
+      final url = Uri.parse(
+        '$baseUrl/v2/store/$storeId/staff/$staffId/suspend',
+      );
+      final headers = await _authHeaders();
 
-      final response = await http.patch(url, headers: await _authHeaders());
+      print('========== SUSPEND STAFF REQUEST ==========');
+      print('URL: $url');
+      print('storeId: "$storeId"');
+      print('staffId: "$staffId"');
+      print('headers: $headers');
+      print('=============================================');
+
+      final response = await http.patch(url, headers: headers);
 
       print('Suspend staff response status: ${response.statusCode}');
       print('Suspend staff response body: ${response.body}');
@@ -166,7 +174,6 @@ class StaffService {
       throw Exception('Network error: $e');
     }
   }
-
   // --------------------- Reinstate Staff ---------------------
   Future<bool> reinstateStaff({
     required String storeId,
@@ -236,7 +243,7 @@ class StaffService {
       final queryParams = {
         'page': page.toString(),
         'limit': limit.toString(),
-        if (roleId != null) 'role_id': roleId,
+        'role_id': ?roleId,
         if (showStaff) 'show_staff': 'true',
       };
 

@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../services/store_order_service.dart';
+import '../../widgets/navbar.dart';
 import '../../widgets/package_order_btn.dart';
 
 class StoreOrderScreen extends StatefulWidget {
@@ -125,133 +126,155 @@ class _StoreOrderScreenState extends State<StoreOrderScreen>
 
   @override
   Widget build(BuildContext context) {
+    final bool isDesktop = MediaQuery.of(context).size.width >= 800;
+
     return Scaffold(
       backgroundColor: AppColors.text,
-      body: Column(
-        children: [
-          // ── Top bar ──
-          Container(
-            color: AppColors.text,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: SafeArea(
-              bottom: false,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const SizedBox(width: 20),
-                  const Text(
-                    'Orders',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh, color: AppColors.primary),
-                    onPressed: () {
-                      _fetchPaid(page: _paidPage);
-                      _fetchPackaged(page: _packagedPage);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // ── Tab bar ──
-          Container(
-            color: AppColors.text,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: AppColors.accent,
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: AppColors.accent,
-              indicatorWeight: 2.5,
-              labelStyle: AppTypography.body.copyWith(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-              unselectedLabelStyle: AppTypography.body.copyWith(fontSize: 13),
-              tabs: [
-                Tab(
+      body: Center(
+        // Desktop width limit for order screen to prevent overly stretched content.
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: Column(
+            children: [
+              // Header updated for desktop layout while keeping mobile layout intact.
+              Container(
+                color: AppColors.text,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SafeArea(
+                  bottom: false,
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('New Orders'),
-                      if ((_paidResult?.total ?? 0) > 0) ...[
-                        const SizedBox(width: 6),
-                        _CountBubble(count: _paidResult!.total),
-                      ],
-                    ],
-                  ),
-                ),
-                Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Packaged'),
-                      if ((_packagedResult?.total ?? 0) > 0) ...[
-                        const SizedBox(width: 6),
-                        _CountBubble(count: _packagedResult!.total),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // ── Tab views ──
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // New orders tab
-                _OrdersTab(
-                  loading: _paidLoading,
-                  error: _paidError,
-                  result: _paidResult,
-                  currentPage: _paidPage,
-                  emptyIcon: Icons.inbox_outlined,
-                  emptyMessage: 'No new orders yet',
-                  onRetry: () => _fetchPaid(page: _paidPage),
-                  onRefresh: () => _fetchPaid(page: _paidPage),
-                  onNext: () => _fetchPaid(page: _paidPage + 1),
-                  onPrev: () => _fetchPaid(page: _paidPage - 1),
-                  orderCardBuilder: (order) => _StoreOrderCard(
-                    order: order,
-                    actionBuilder: (orderItemId, itemName) =>
-                        PackageOrderButton(
-                          orderItemId: orderItemId,
-                          orderId: order.id,
-                          itemName: itemName,
-                          onSuccess: () {
-                            _refreshOrders();
-                          },
+                      if (isDesktop)
+                        const SizedBox(width: 20)
+                      else
+                        const SizedBox(width: 20),
+                      const Expanded(
+                        child: Center(
+                          child: Text(
+                            'Orders',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
                         ),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.refresh,
+                              color: AppColors.primary,
+                            ),
+                            onPressed: () {
+                              _fetchPaid(page: _paidPage);
+                              _fetchPackaged(page: _packagedPage);
+                            },
+                          ),
+                          if (isDesktop) const AppNavBar(),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
+              ),
 
-                // Packaged tab
-                _OrdersTab(
-                  loading: _packagedLoading,
-                  error: _packagedError,
-                  result: _packagedResult,
-                  currentPage: _packagedPage,
-                  emptyIcon: Icons.inventory_2_outlined,
-                  emptyMessage: 'No packaged orders waiting',
-                  onRetry: () => _fetchPackaged(page: _packagedPage),
-                  onRefresh: () => _fetchPackaged(page: _packagedPage),
-                  onNext: () => _fetchPackaged(page: _packagedPage + 1),
-                  onPrev: () => _fetchPackaged(page: _packagedPage - 1),
-                  orderCardBuilder: (order) =>
-                      _StoreOrderCard(order: order, actionBuilder: null),
+              // Tab styling adjusted for desktop readability.
+              Container(
+                color: AppColors.text,
+                child: TabBar(
+                  controller: _tabController,
+                  labelColor: AppColors.accent,
+                  unselectedLabelColor: Colors.grey,
+                  indicatorColor: AppColors.accent,
+                  indicatorWeight: 2.5,
+                  labelStyle: AppTypography.body.copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  unselectedLabelStyle: AppTypography.body.copyWith(
+                    fontSize: 13,
+                  ),
+                  tabs: [
+                    Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('New Orders'),
+                          if ((_paidResult?.total ?? 0) > 0) ...[
+                            const SizedBox(width: 6),
+                            _CountBubble(count: _paidResult!.total),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Packaged'),
+                          if ((_packagedResult?.total ?? 0) > 0) ...[
+                            const SizedBox(width: 6),
+                            _CountBubble(count: _packagedResult!.total),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _OrdersTab(
+                      loading: _paidLoading,
+                      error: _paidError,
+                      result: _paidResult,
+                      currentPage: _paidPage,
+                      emptyIcon: Icons.inbox_outlined,
+                      emptyMessage: 'No new orders yet',
+                      onRetry: () => _fetchPaid(page: _paidPage),
+                      onRefresh: () => _fetchPaid(page: _paidPage),
+                      onNext: () => _fetchPaid(page: _paidPage + 1),
+                      onPrev: () => _fetchPaid(page: _paidPage - 1),
+                      orderCardBuilder: (order) => _StoreOrderCard(
+                        order: order,
+                        actionBuilder: (orderItemId, itemName) =>
+                            PackageOrderButton(
+                              orderItemId: orderItemId,
+                              orderId: order.id,
+                              itemName: itemName,
+                              onSuccess: () {
+                                _refreshOrders();
+                              },
+                            ),
+                      ),
+                    ),
+
+                    _OrdersTab(
+                      loading: _packagedLoading,
+                      error: _packagedError,
+                      result: _packagedResult,
+                      currentPage: _packagedPage,
+                      emptyIcon: Icons.inventory_2_outlined,
+                      emptyMessage: 'No packaged orders waiting',
+                      onRetry: () => _fetchPackaged(page: _packagedPage),
+                      onRefresh: () => _fetchPackaged(page: _packagedPage),
+                      onNext: () => _fetchPackaged(page: _packagedPage + 1),
+                      onPrev: () => _fetchPackaged(page: _packagedPage - 1),
+                      orderCardBuilder: (order) =>
+                          _StoreOrderCard(order: order, actionBuilder: null),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

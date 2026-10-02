@@ -73,6 +73,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // ── DESKTOP ADAPTATION START ──
     final bool isMobile = MediaQuery.of(context).size.width < 600;
     final bool isDesktop = MediaQuery.of(context).size.width >= 800;
+    final bool canGoBack = Navigator.of(context).canPop();
     // ── DESKTOP ADAPTATION END ──
 
     return Scaffold(
@@ -92,20 +93,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: const Icon(
-                            Icons.arrow_back_ios,
-                            color: AppColors.primary,
-                            size: 20,
-                          ),
+                        SizedBox(
+                          width: 28,
+                          child: canGoBack
+                              ? GestureDetector(
+                                  onTap: () => Navigator.pop(context),
+                                  child: const Icon(
+                                    Icons.arrow_back_ios,
+                                    color: AppColors.primary,
+                                    size: 20,
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
                         ),
-                        const Text(
-                          'Profile',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
+                        const Expanded(
+                          child: Center(
+                            child: Text(
+                              'Profile',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                            ),
                           ),
                         ),
                         const AppNavBar(),
@@ -159,7 +169,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         // Avatar circle
                         CircleAvatar(
                           radius: 48,
-                          backgroundColor: AppColors.accent.withValues(alpha: 0.15),
+                          backgroundColor: AppColors.accent.withValues(
+                            alpha: 0.15,
+                          ),
                           backgroundImage: getAvatarUrl() != null
                               ? NetworkImage(getAvatarUrl()!)
                               : null,
@@ -223,7 +235,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: AppColors.textError.withValues(alpha: 0.4),
+                                color: AppColors.textError.withValues(
+                                  alpha: 0.4,
+                                ),
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),

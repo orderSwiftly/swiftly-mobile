@@ -78,39 +78,191 @@ class _StoreOwnerDashboardScreenState extends State<StoreOwnerDashboardScreen> {
             isLoading: _isLoading,
           ),
           Expanded(
-  child: _isLoading
-      ? const Center(
-          child: CircularProgressIndicator(color: AppColors.accent),
-        )
-      : Center(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.accent),
+                  )
+                : isDesktop
+                // Desktop-specific dashboard layout for store owner.
+                ? _buildDesktopContent()
+                : _buildMobileContent(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Desktop version: wider content card + summary blocks for large screens.
+  Widget _buildMobileContent() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.store, size: 64, color: AppColors.accent),
+          const SizedBox(height: 16),
+          Text(
+            'Welcome to ${_storeName ?? 'your store'}',
+            style: AppTypography.headline.copyWith(color: AppColors.primary),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Manage your store and products',
+            style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Desktop layout: center the dashboard and add a large info card.
+  Widget _buildDesktopContent() {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1100),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.store,
-                size: 64,
-                color: AppColors.accent,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Welcome to ${_storeName ?? 'your store'}',
-                style: AppTypography.headline.copyWith(
-                  color: AppColors.primary,
+              Card(
+                color: AppColors.text,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  side: BorderSide(
+                    color: AppColors.secondary.withValues(alpha: 0.18),
+                  ),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Manage your store and products',
-                style: AppTypography.body.copyWith(
-                  color: AppColors.textSecondary,
+                child: Padding(
+                  padding: const EdgeInsets.all(28),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: AppColors.accent.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: const Icon(
+                          Icons.storefront_rounded,
+                          color: AppColors.accent,
+                          size: 36,
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Welcome to ${_storeName ?? 'your store'}',
+                              style: AppTypography.headline.copyWith(
+                                color: AppColors.primary,
+                                fontSize: 30,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _storeAddress ??
+                                  'Manage your store operations from one place.',
+                              style: AppTypography.body.copyWith(
+                                color: AppColors.textSecondary,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+              ),
+              const SizedBox(height: 28),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildSummaryCard(
+                      icon: Icons.receipt_long_outlined,
+                      title: 'Orders',
+                      value: 'Pending review',
+                    ),
+                  ),
+                  const SizedBox(width: 18),
+                  Expanded(
+                    child: _buildSummaryCard(
+                      icon: Icons.inventory_2_outlined,
+                      title: 'Products',
+                      value: 'Live catalog',
+                    ),
+                  ),
+                  const SizedBox(width: 18),
+                  Expanded(
+                    child: _buildSummaryCard(
+                      icon: Icons.people_alt_outlined,
+                      title: 'Staff',
+                      value: 'Team ready',
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
-),
-        ],
+      ),
+    );
+  }
+
+  // Reusable desktop summary card for dashboard stats/overview blocks.
+  Widget _buildSummaryCard({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    return Card(
+      color: AppColors.text,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: AppColors.secondary.withValues(alpha: 0.18)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: AppColors.accent),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTypography.body.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    value,
+                    style: AppTypography.title.copyWith(
+                      color: AppColors.primary,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
